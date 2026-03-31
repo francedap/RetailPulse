@@ -1,0 +1,33 @@
+RetailPulse/
+│
+├── README.md                  # Documentazione
+├── requirements.txt           # Librerie (streamlit, agno, pandas, plotly, python-dotenv)
+├── .env                       # File (da NON caricare su GitHub) con le API Keys (es. OPENAI_API_KEY)
+├── app.py                     # Il file di avvio principale (punto di ingresso)
+│
+├── core_ai/                   # IL CUORE DEL PROGETTO (La parte valutata dal Prof)
+│   ├── __init__.py
+│   ├── market_explorer.py     # Agente Agno per ricerca prezzi/trend
+│   ├── inventory_analyst.py   # Agente Agno per analisi giacenze e calcolo margini
+│   ├── strategic_advisor.py   # Agente Agno che orchestra i risultati
+│   └── support_agent.py       # Agente Agno per la chat di assistenza nella sidebar
+│
+├── pages/                     # LE SCHERMATE (Gestite in automatico da Streamlit)
+│   ├── 1_🏠_Principale.py     # Dashboard con la sintesi AI
+│   ├── 2_📦_Magazzino.py      # Tabella prodotti e consigli di vendita
+│   └── 3_🌐_Mercato.py        # Prodotti in hype e arbitraggio
+│
+├── components/                # COMPONENTI RIUTILIZZABILI DELLA UI
+│   ├── __init__.py
+│   └── sidebar.py             # Codice per la chat dell'AI di supporto, iniettata in ogni pagina
+│
+├── utils/                     # FUNZIONI DI SUPPORTO
+│   ├── __init__.py
+│   └── data_manager.py        # Funzioni per leggere/scrivere i dati del magazzino
+│
+├── data/                      # DATI DI PROGETTO
+│   └── mock_inventory.json    # File JSON con i dati fittizi del magazzino per i test
+│
+└── assets/                    # RISORSE VISIVE
+    ├── logo.png               # Logo dell'applicazione
+    └── style.css              # File CSS se volete personalizzare colori e margini di Streamlit
