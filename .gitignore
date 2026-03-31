@@ -1,0 +1,36 @@
+# =========================
+# Ambienti Virtuali
+# =========================
+venv/
+.venv/
+env/
+*.env
+
+# =========================
+# File di Cache di Python
+# =========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# =========================
+# Sicurezza e Chiavi API
+# =========================
+.env
+secrets.toml
+
+# =========================
+# File di Sistema Operativo
+# =========================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# =========================
+# Impostazioni Editor/IDE
+# =========================
+.vscode/
+.idea/
+*.swp

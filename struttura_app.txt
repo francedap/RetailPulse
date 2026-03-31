@@ -1,3 +1,13 @@
+istruzioni:
+
+Entri nella cartella: cd RetailPulse
+Creare l'ambiente virtuale: python -m venv venv
+Entrare nell'ambiente virtuale: 
+    Windows: venv\Scripts\activate
+    Mac/Linux: source venv/bin/activate
+Installare le Librerie: pip install -r requirements.txt
+
+
 RetailPulse/
 │
 ├── README.md                  # Documentazione
@@ -13,9 +23,9 @@ RetailPulse/
 │   └── support_agent.py       # Agente Agno per la chat di assistenza nella sidebar
 │
 ├── pages/                     # LE SCHERMATE (Gestite in automatico da Streamlit)
-│   ├── 1_🏠_Principale.py     # Dashboard con la sintesi AI
-│   ├── 2_📦_Magazzino.py      # Tabella prodotti e consigli di vendita
-│   └── 3_🌐_Mercato.py        # Prodotti in hype e arbitraggio
+│   ├── HomePage.py     # Dashboard con la sintesi AI
+│   ├── Magazzino.py      # Tabella prodotti e consigli di vendita
+│   └── Mercato.py        # Prodotti in hype e arbitraggio
 │
 ├── components/                # COMPONENTI RIUTILIZZABILI DELLA UI
 │   ├── __init__.py
@@ -31,3 +41,4 @@ RetailPulse/
 └── assets/                    # RISORSE VISIVE
     ├── logo.png               # Logo dell'applicazione
     └── style.css              # File CSS se volete personalizzare colori e margini di Streamlit
+
