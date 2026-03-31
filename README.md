@@ -1,10 +1,10 @@
-# 📦 SmartStock AI
+# 📦 RetailPulse AI
 
 Un'applicazione mobile innovativa per la gestione intelligente del magazzino e l'analisi di mercato, potenziata dall'Intelligenza Artificiale per ottimizzare margini, vendite e strategie di acquisto.
 
 ## 🌟 Panoramica del Progetto
 
-SmartStock AI nasce per semplificare e automatizzare le decisioni strategiche di un'azienda. L'app non si limita a tracciare l'inventario, ma utilizza modelli di intelligenza artificiale per analizzare i dati aziendali, identificare inefficienze strutturali e suggerire azioni mirate (Vendere o Acquistare) basate sull'andamento storico e attuale del mercato.
+RetailPulse AI nasce per semplificare e automatizzare le decisioni strategiche di un'azienda. L'app non si limita a tracciare l'inventario, ma utilizza modelli di intelligenza artificiale per analizzare i dati aziendali, identificare inefficienze strutturali e suggerire azioni mirate (Vendere o Acquistare) basate sull'andamento storico e attuale del mercato.
 
 ## ✨ Funzionalità Principali
 
@@ -44,4 +44,4 @@ L'applicazione è strutturata in 3 moduli principali:
 
 Clona il repository sul tuo computer:
 ```bash
-git clone [https://github.com/tuo-username/smartstock-ai.git](https://github.com/tuo-username/smartstock-ai.git)
+git clone [https://github.com/tuo-username/RetailPulse-ai.git](https://github.com/tuo-username/RetailPulse-ai.git)
