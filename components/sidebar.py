@@ -1,5 +1,6 @@
 import streamlit as st
 import time
+from core_ai.support_agent import chiedi_all_assistente
 
 def draw_sidebar(nome_azienda="RetailPulse 📈"):
     """Disegna la sidebar. Se passato, usa il nome dell'azienda."""
@@ -26,8 +27,13 @@ def draw_sidebar(nome_azienda="RetailPulse 📈"):
                 st.markdown(prompt)
 
             with st.chat_message("assistant"):
-                with st.spinner("Sto pensando..."):
-                    time.sleep(1) 
-                    response = "Ancora non sono collegato ad Agno, ma presto lo sarò!"
+                with st.spinner("Sto guardando nel magazzino... 📦"):
+                    
+                    # Recuperiamo l'ID dell'azienda dalla memoria della sessione
+                    mio_id_azienda = st.session_state.azienda_id
+                    
+                    # Passiamo sia la domanda che l'ID all'assistente
+                    response = chiedi_all_assistente(prompt, mio_id_azienda)
+                    
                     st.markdown(response)
                     st.session_state.messages.append({"role": "assistant", "content": response})
