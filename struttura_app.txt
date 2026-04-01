@@ -7,7 +7,9 @@ Entrare nell'ambiente virtuale:
     Mac/Linux: source venv/bin/activate
 Installare le Librerie: pip install -r requirements.txt
 
+per far partire il ""server"": streamlit run app.py
 
+agiornare il requirements.txt delle librerie: pip freeze > requirements.txt
 RetailPulse/
 │
 ├── README.md                  # Documentazione

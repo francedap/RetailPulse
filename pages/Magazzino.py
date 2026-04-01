@@ -5,6 +5,17 @@ import time
 from components.sidebar import draw_sidebar
 from utils.db_manager import add_prodotto, get_prodotti_raw, update_prezzo_prodotto, delete_prodotto
 
+import re
+
+def estrai_numero(testo):
+    # Forziamo la conversione di QUALSIASI cosa arrivi (liste, dizionari, ecc.) in una stringa di testo
+    testo_str = str(testo)
+    
+    # Cerca numeri decimali o interi nella stringa
+    numeri = re.findall(r"[-+]?\d*\.\d+|\d+", testo_str.replace(',', '.'))
+    return float(numeri[0]) if numeri else None
+
+
 # --- 0. CONTROLLO SICUREZZA ACCESSI ---
 if 'logged_in' not in st.session_state or not st.session_state.logged_in:
     st.switch_page("app.py")
@@ -74,6 +85,33 @@ with tab_view:
                 # 3. Salvare nel DB scommentando la riga qui sotto:
                 # update_prezzo_prodotto(prodotto_id, nuovo_prezzo)
                 # 4. Usare st.rerun() per ricaricare la tabella.
+                prompt = f"Cerca sul web il prezzo di mercato di '{prodotto_scelto_nome}'. Rispondi SOLO con il numero del prezzo."
+                
+                try:
+                    # Inizializziamo l'agente di Agno
+                    agente = agente_prezzi.crea_agente_prezzi()
+                    
+                    # .run() esegue la ricerca e restituisce un oggetto RunResponse
+                    risposta = agente.run(prompt)
+                    
+                    # Estraiamo il testo della risposta con .content
+                    risposta_raw = risposta.content
+                    
+                    # Passiamo il testo alla nostra solita funzione di estrazione
+                    nuovo_prezzo = estrai_numero(risposta_raw)
+                    
+
+                    if nuovo_prezzo is not None:
+                        # Salvare nel DB (scommenta quando vuoi testare il salvataggio reale)
+                        update_prezzo_prodotto(prodotto_id, nuovo_prezzo)
+                        st.success(f"Prezzo aggiornato: €{nuovo_prezzo:.2f}")
+                        
+                        st.rerun() #questo serve a ricaricare la pagina
+                    else:
+                        st.error(f"L'IA non ha restituito un prezzo valido. Risposta grezza: {risposta_raw}")
+                        
+                except Exception as e:
+                    st.error(f"Errore durante l'aggiornamento: {e}")
 
         with col_del:
             with st.popover("Elimina 🗑️", use_container_width=True):
