@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import time
+import core_ai.cerca_nuovo_prezzo_agent as agente_prezzi
 
 from components.sidebar import draw_sidebar
 from utils.db_manager import add_prodotto, get_prodotti_raw, update_prezzo_prodotto, delete_prodotto
@@ -79,12 +80,6 @@ with tab_view:
             if st.button("Aggiorna Prezzo ⚡", use_container_width=True):
                 st.info(f"In attesa dell'IA per cercare il prezzo di '{prodotto_scelto_nome}'.")
                 
-                # TODO: IMPLEMENTARE AGNO - Ricerca Prezzo Singolo Prodotto
-                # 1. Inviare 'prodotto_scelto_nome' all'agente per cercare il valore di mercato aggiornato.
-                # 2. Estrarre il numero (nuovo_prezzo) dalla risposta dell'IA.
-                # 3. Salvare nel DB scommentando la riga qui sotto:
-                # update_prezzo_prodotto(prodotto_id, nuovo_prezzo)
-                # 4. Usare st.rerun() per ricaricare la tabella.
                 prompt = f"Cerca sul web il prezzo di mercato di '{prodotto_scelto_nome}'. Rispondi SOLO con il numero del prezzo."
                 
                 try:
