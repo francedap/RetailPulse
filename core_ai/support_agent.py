@@ -1,5 +1,5 @@
 from agno.agent import Agent
-from agno.models.google import Gemini
+from agno.models.ollama import Ollama 
 from dotenv import load_dotenv
 import pandas as pd
 from utils.db_manager import get_prodotti_raw # Importiamo la funzione per leggere il DB
@@ -7,7 +7,7 @@ from utils.db_manager import get_prodotti_raw # Importiamo la funzione per legge
 load_dotenv() 
 
 assistente_magazzino = Agent(
-    model=Gemini(id="gemini-2.5-flash"),
+    model=Ollama(id="llama3.2"),
     description="Sei un assistente virtuale per l'app RetailPulse, esperto di gestione magazzino e vendite.",
     instructions=[
         "Rispondi sempre in modo cortese, conciso e incoraggiante.",
@@ -42,6 +42,6 @@ def chiedi_all_assistente(messaggio_utente: str, azienda_id: int) -> str:
     {messaggio_utente}
     """
     
-    # 4. Inviamo tutto a Gemini
+    # 4. Inviamo tutto a Ollama
     risposta = assistente_magazzino.run(prompt_arricchito)
     return risposta.content

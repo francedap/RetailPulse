@@ -14,8 +14,19 @@ def estrai_numero(testo):
     
     # Cerca numeri decimali o interi nella stringa
     numeri = re.findall(r"[-+]?\d*\.\d+|\d+", testo_str.replace(',', '.'))
-    return float(numeri[0]) if numeri else None
-
+    
+    if not numeri:
+        return None
+        
+    # Convertiamo tutti i numeri trovati in una lista di decimali (float)
+    numeri_float = [float(n) for n in numeri]
+    
+    # TRUCCO: Se l'IA dice "1 paio di Air Force 1 costa 120.50", 
+    # la lista sarà [1.0, 1.0, 120.50]. 
+    # Prendendo il massimo (max), becchiamo sempre il prezzo reale!
+    prezzo_reale = max(numeri_float)
+    
+    return prezzo_reale
 
 # --- 0. CONTROLLO SICUREZZA ACCESSI ---
 if 'logged_in' not in st.session_state or not st.session_state.logged_in:
@@ -80,8 +91,9 @@ with tab_view:
             if st.button("Aggiorna Prezzo ⚡", use_container_width=True):
                 st.info(f"In attesa dell'IA per cercare il prezzo di '{prodotto_scelto_nome}'.")
                 
-                prompt = f"Cerca sul web il prezzo di mercato di '{prodotto_scelto_nome}'. Rispondi SOLO con il numero del prezzo."
-                
+                # Abbiamo rafforzato il prompt per far dire all'IA SOLO il prezzo in Euro
+# Nuovo prompt che vieta i separatori delle migliaia
+                prompt = f"Trova il prezzo medio di mercato in Euro per '{prodotto_scelto_nome}'. REGOLE TASSATIVE: Non scrivere lettere, non scrivere 'euro', non scrivere il nome del prodotto. Scrivi ESATTAMENTE E SOLO il numero finale. IMPORTANTE: NON usare punti o virgole per le migliaia. Scrivi il numero tutto attaccato usando il punto SOLO per i decimali (esempio corretto: 2950.00)."                
                 try:
                     # Inizializziamo l'agente di Agno
                     agente = agente_prezzi.crea_agente_prezzi()
@@ -97,7 +109,7 @@ with tab_view:
                     
 
                     if nuovo_prezzo is not None:
-                        # Salvare nel DB (scommenta quando vuoi testare il salvataggio reale)
+                        # Salvare nel DB
                         update_prezzo_prodotto(prodotto_id, nuovo_prezzo)
                         st.success(f"Prezzo aggiornato: €{nuovo_prezzo:.2f}")
                         
