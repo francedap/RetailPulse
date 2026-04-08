@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+from core_ai.strategic_advisor_agent import genera_sintesi_strategica
+from core_ai.inventory_analyst import analizza_punti_deboli
 
 # Importiamo la sidebar e le funzioni del DB
 from components.sidebar import draw_sidebar
@@ -54,12 +56,23 @@ st.markdown("---")
 st.subheader("🧠 Sintesi Strategica Generata dall'IA")
 
 with st.container(border=True):
-    st.info("Area riservata all'IA: In attesa dell'Agente Strategico per la sintesi testuale.")
-    
-    # TODO: IMPLEMENTARE AGNO - Sintesi Home Page
-    # 1. Passare all'agente i totali (total_value, total_margin, prodotti_in_perdita).
-    # 2. Chiedere un breve paragrafo di riepilogo sul polso della situazione.
-    # 3. Stampare la risposta qui usando st.write().
+    # 1. Creiamo il pulsante
+    if st.button("Genera Sintesi 🤖", use_container_width=True):
+        
+        # 2. Se l'utente clicca, mostriamo il caricamento
+        with st.spinner("L'Intelligenza Artificiale sta analizzando i dati del tuo magazzino... ⏳"):
+            
+            # Chiamiamo l'agente e salviamo il risultato in memoria
+            testo_generato = genera_sintesi_strategica(total_value, total_margin, prodotti_in_perdita)
+            st.session_state.sintesi_ai_home = testo_generato
+
+    # 3. Controlliamo se abbiamo una sintesi in memoria da mostrare
+    if 'sintesi_ai_home' in st.session_state:
+        st.success("Ecco la tua analisi:")
+        st.write(st.session_state.sintesi_ai_home)
+    else:
+        # Messaggio di default quando non è ancora stata generata
+        st.info("Clicca il pulsante qui sopra per ottenere un'analisi intelligente del tuo magazzino.")
 
 st.markdown("---")
 
@@ -76,7 +89,12 @@ if 'market_trend_active' not in st.session_state:
 with col_btn1:
     if st.button("🔍 Scansione Punti Deboli", use_container_width=True):
         st.session_state.ai_scan_active = True
-        st.session_state.market_trend_active = False 
+        st.session_state.market_trend_active = False
+        
+        # AGGIUNTA: Cancelliamo la vecchia scansione dalla memoria
+        # così forziamo l'IA a ricalcolarla leggendo i dati freschi!
+        if 'risultato_scansione' in st.session_state:
+            del st.session_state['risultato_scansione']
 
 with col_btn2:
     if st.button("📊 Mostra Andamento Mercato", use_container_width=True):
@@ -86,17 +104,16 @@ with col_btn2:
 # --- LOGICA VISUALIZZAZIONE RISULTATI AI ---
 if st.session_state.ai_scan_active:
     st.markdown("### Risultati Scansione Inefficienze")
-    st.info("Area riservata all'IA: In attesa dell'Inventory Analyst Agent.")
     
-    # TODO: IMPLEMENTARE AGNO - Inventory Agent
-    # 1. Passare il DataFrame 'dati_magazzino' all'agente.
-    # 2. L'agente deve trovare il prodotto con il peggior rapporto giorni_giacenza/margine.
-    # 3. Mostrare il prodotto e il suggerimento dell'IA (es. "Sconta del 10%").
+    # Controlliamo se abbiamo già il risultato in memoria
+    if 'risultato_scansione' not in st.session_state:
+        with st.spinner("Analisi in corso... L'IA sta cercando i colli di bottiglia 🕵️‍♂️"):
+            
+            # Chiamiamo la nostra nuova funzione passando TUTTO il DataFrame
+            testo_scansione = analizza_punti_deboli(dati_magazzino)
+            
+            # Salviamo il risultato in memoria
+            st.session_state.risultato_scansione = testo_scansione
 
-if st.session_state.market_trend_active:
-    st.markdown("### Analisi Trend di Mercato Generali")
-    st.info("Area riservata all'IA: In attesa del Market Explorer Agent.")
-    
-    # TODO: IMPLEMENTARE AGNO - Market Trend
-    # 1. Chiedere all'agente le news macro-economiche o i trend generali del settore principale dell'azienda.
-    # 2. Mostrare i dati o un grafico pertinente.
+    # Mostriamo il risultato
+    st.info(st.session_state.risultato_scansione)
