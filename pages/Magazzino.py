@@ -90,10 +90,8 @@ with tab_view:
         with col_upd:
             if st.button("Aggiorna Prezzo ⚡", use_container_width=True):
                 st.info(f"In attesa dell'IA per cercare il prezzo di '{prodotto_scelto_nome}'.")
-                
-                query_mirata = f"site:trovaprezzi.it {prodotto_scelto_nome}"
-
-                prompt = f"Cerca {query_mirata} e scrivi solo il prezzo medio (solo numero)."
+            
+                prompt = f"Cerca {prodotto_scelto_nome} e scrivi solo il prezzo medio."
                 try:
                     # Inizializziamo l'agente di Agno
                     agente = agente_prezzi.crea_agente_prezzi()
