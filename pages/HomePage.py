@@ -68,8 +68,8 @@ with st.container(border=True):
 
     # 3. Controlliamo se abbiamo una sintesi in memoria da mostrare
     if 'sintesi_ai_home' in st.session_state:
-        st.success("Ecco la tua analisi:")
-        st.write(st.session_state.sintesi_ai_home)
+        st.success(st.session_state.sintesi_ai_home)
+        
     else:
         # Messaggio di default quando non è ancora stata generata
         st.info("Clicca il pulsante qui sopra per ottenere un'analisi intelligente del tuo magazzino.")

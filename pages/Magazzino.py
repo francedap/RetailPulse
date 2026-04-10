@@ -91,9 +91,9 @@ with tab_view:
             if st.button("Aggiorna Prezzo ⚡", use_container_width=True):
                 st.info(f"In attesa dell'IA per cercare il prezzo di '{prodotto_scelto_nome}'.")
                 
-                # Abbiamo rafforzato il prompt per far dire all'IA SOLO il prezzo in Euro
-# Nuovo prompt che vieta i separatori delle migliaia
-                prompt = f"Trova il prezzo medio di mercato in Euro per '{prodotto_scelto_nome}'. REGOLE TASSATIVE: Non scrivere lettere, non scrivere 'euro', non scrivere il nome del prodotto. Scrivi ESATTAMENTE E SOLO il numero finale. IMPORTANTE: NON usare punti o virgole per le migliaia. Scrivi il numero tutto attaccato usando il punto SOLO per i decimali (esempio corretto: 2950.00)."                
+                query_mirata = f"site:trovaprezzi.it {prodotto_scelto_nome}"
+
+                prompt = f"Cerca {query_mirata} e scrivi solo il prezzo medio (solo numero)."
                 try:
                     # Inizializziamo l'agente di Agno
                     agente = agente_prezzi.crea_agente_prezzi()
