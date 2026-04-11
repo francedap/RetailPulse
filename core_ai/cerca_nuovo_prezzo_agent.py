@@ -6,6 +6,7 @@ from agno.agent import Agent
 from agno.models.ollama import Ollama
 from playwright.sync_api import sync_playwright
 
+
 load_dotenv()
 # 1. DEFINIAMO IL NOSTRO TOOL CON ISTRUZIONI PIÙ RIGIDE
 def cerca_prezzi_shopping(query: str) -> str:
@@ -40,52 +41,103 @@ def cerca_prezzi_shopping(query: str) -> str:
         browser = p.chromium.launch(headless=False)
         context = browser.new_context(user_agent=ua_casuale)
         page = context.new_page()
+
         query_url = query.replace(" ", "+")
         
-        page.goto(f"https://duckduckgo.com/?q={query_url}&ia=web&kl=it-it")
-        page.wait_for_timeout(3000)
+        page.add_init_script("""
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined
+            });
+        """)
+        # Puntiamo dritti a Trovaprezzi invece che a DuckDuckGo
+        url_ricerca = f"https://www.ebay.it/sch/i.html?_nkw={query_url}"
+        print(f"[Scraper] 🌐 Navigo su: {url_ricerca}")
         
+        page.goto(url_ricerca)
+        # Scatta una foto per capire se i cookie bloccano la visuale!
+        page.screenshot(path="prima_vista_del_bot.png")
+        page.wait_for_timeout(5000)
+        try:
+            # Cerca un qualsiasi pulsante con parole chiave di accettazione
+            pulsante_accetta = page.get_by_role("button", name=re.compile("accett|accept|concord|ok", re.IGNORECASE))
+            if pulsante_accetta.count() > 0:
+                pulsante_accetta.first.click(timeout=3000)
+                print("[Scraper] 🍪 Banner dei cookie distrutto!")
+                page.wait_for_timeout(1500) # Aspettiamo che l'animazione del banner sparisca
+        except Exception:
+            # Se non c'è il banner o fallisce, pazienza, continuiamo
+            pass
+        page.screenshot(path="dopo_vista_del_bot.png")
         testo_pagina = page.inner_text("body")
+        
         browser.close()
         
     # --- INIZIO NUOVA PARTE INTEGRATA ---
-    # 1. Nuova Regex: supporta i punti delle migliaia (es. 2.499,00 €) e prezzi senza decimali
-    pattern_prezzi = r'[€$]\s?((?:\d{1,3}[.,])?\d{1,3}[.,]\d{2})|((?:\d{1,3}[.,])?\d{1,3}[.,]\d{2})\s?[€$]'
+   # 1. LA REGEX UNIVERSALE DEFINITIVA
+    # Cattura valute (€, $, £, EUR, USD, GBP)
+    # Gestisce qualsiasi spazio o ritorno a capo in mezzo [\s\xa0\n]*
+    # Accetta numeri con o senza decimali, e con qualsiasi punto/virgola
+    valuta = r'(?:[€$£]|EUR|USD|GBP)'
+    spazio = r'[\s\xa0\n]*'
+    numero = r'(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)'
     
-    # IMPORTANTE: qui per comodità mantengo il nome che avevi dato tu (match_trovati)
-    match_trovati = re.findall(pattern_prezzi, testo_pagina)
+    # Cerchiamo: "Valuta + Numero" OPPURE "Numero + Valuta"
+    pattern_prezzi = f'{valuta}{spazio}{numero}|{numero}{spazio}{valuta}'
+    
+    match_trovati = re.findall(pattern_prezzi, testo_pagina, re.IGNORECASE)
     
     prezzi_puliti = []
     
     for match in match_trovati:
-        # Prende il numero trovato (il primo o il secondo gruppo)
+        # Prende il numero (è nel primo gruppo se la valuta è prima, nel secondo se è dopo)
         prezzo_str = match[0] if match[0] else match[1]
         
         if prezzo_str:
-            # 2. Pulizia per Python: se c'è un punto delle migliaia (es. 2.500,00), lo togliamo
-            if '.' in prezzo_str and ',' in prezzo_str:
-                prezzo_str = prezzo_str.replace('.', '').replace(',', '.')
-            # Se c'è solo la virgola (es. 500,00), la trasformiamo in punto per i calcoli
-            elif ',' in prezzo_str:
-                prezzo_str = prezzo_str.replace(',', '.')
+            # Tolgo eventuali lettere o spazi estranei finiti nel mezzo
+            prezzo_str = re.sub(r'[^\d.,]', '', prezzo_str)
             
+            # 2. PULIZIA INTELLIGENTE DEL TESTO
+            if '.' in prezzo_str and ',' in prezzo_str:
+                # Formato IT standard: 1.250,00 -> diventa 1250.00
+                prezzo_str = prezzo_str.replace('.', '').replace(',', '.')
+                
+            elif ',' in prezzo_str:
+                # Capisce se è 1,250 (migliaia inglesi) o 150,50 (decimali)
+                # Se dopo la virgola ci sono esattamente 2 cifre, sono decimali.
+                parti = prezzo_str.split(',')
+                if len(parti[-1]) == 2:
+                    prezzo_str = prezzo_str.replace(',', '.')
+                else:
+                    prezzo_str = prezzo_str.replace(',', '') 
+                    
+            elif '.' in prezzo_str:
+                # Capisce se è 1.250 (migliaia italiane) o 150.50 (decimali inglesi)
+                parti = prezzo_str.split('.')
+                if len(parti[-1]) != 2:
+                    prezzo_str = prezzo_str.replace('.', '') 
+
             try:
                 prezzi_puliti.append(float(prezzo_str))
             except ValueError:
                 continue
-    # --- FINE NUOVA PARTE INTEGRATA ---
+    
+    # --- FINE PARTE INTEGRATA ---
     
     # Rimuove i duplicati esatti per snellire la lista
     prezzi_puliti = list(set(prezzi_puliti))
     
-    prezzi_reali = [p for p in prezzi_puliti if p > 1000]
+    # 3. FILTRO CORRETTO (Evitiamo gli accessori troppo economici, ma includiamo il prodotto)
+    prezzi_reali = [p for p in prezzi_puliti if p > 50]
     
     if not prezzi_reali:
-        return "Nessun prezzo valido trovato."
+        print("[Scraper] Nessun prezzo valido trovato nella pagina.")
+        return 0.0
         
     media_matematica = sum(prezzi_reali) / len(prezzi_reali)
     media_arrotondata = round(media_matematica, 2)
-
+    
+    print(f"[Scraper] Trovati i seguenti prezzi validi: {prezzi_reali}")
+    
     return f"Prezzi trovati: {prezzi_reali}\nMEDIA: {media_arrotondata}"
 # 2. AGGIORNIAMO LE ISTRUZIONI DELL'AGENTE
 def crea_agente_prezzi():
@@ -96,7 +148,7 @@ def crea_agente_prezzi():
             "Sei un analista esperto nel monitoraggio dei prezzi online.",
             "Il tuo obiettivo è trovare il reale prezzo medio di mercato per i prodotti richiesti.",
             "STRATEGIA:",
-            "- Estrai la marca e il modello dalla richiesta dell'utente.",
+            "- Estrai la marca e il modello preciso e le caratteristiche dalla richiesta dell'utente.",
             "- Usa lo strumento 'cerca_prezzi_shopping'. ATTENZIONE: l'argomento 'query' DEVE essere solo testo puro.",
             "- Scarta dalla lista i prezzi palesemente troppo bassi.",
             "FORMATO DI RISPOSTA OBBLIGATORIO:",
