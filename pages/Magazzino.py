@@ -4,7 +4,7 @@ import time
 import core_ai.cerca_nuovo_prezzo_agent as agente_prezzi
 
 from components.sidebar import draw_sidebar
-from utils.db_manager import add_prodotto, get_prodotti_raw, update_prezzo_prodotto, delete_prodotto
+from utils.db_manager import add_prodotto, get_prodotti_raw, update_prezzo_prodotto, delete_prodotto, log_price_update
 
 import re
 
@@ -38,7 +38,7 @@ st.title("📦 Gestione Magazzino")
 st.write("Visualizza, aggiorna o rimuovi gli articoli dal tuo inventario.")
 st.markdown("---")
 
-tab_view, tab_add = st.tabs(["📋 Visualizza Inventario", "➕ Aggiungi Prodotto"])
+tab_view, tab_add = st.tabs(["📋 Visualizza Inventario", " ➕ Aggiungi Prodotto"])
 
 # --- SCHEDA: AGGIUNGI PRODOTTO ---
 with tab_add:
@@ -109,6 +109,7 @@ with tab_view:
                     if nuovo_prezzo is not None:
                         # Salvare nel DB
                         update_prezzo_prodotto(prodotto_id, nuovo_prezzo)
+                        log_price_update(prodotto_id, nuovo_prezzo)
                         st.success(f"Prezzo aggiornato: €{nuovo_prezzo:.2f}")
                         
                         st.rerun() #questo serve a ricaricare la pagina

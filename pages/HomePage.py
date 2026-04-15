@@ -4,10 +4,10 @@ import numpy as np
 from core_ai.strategic_advisor_agent import genera_sintesi_strategica
 from core_ai.inventory_analyst import analizza_punti_deboli
 
+
 # Importiamo la sidebar e le funzioni del DB
 from components.sidebar import draw_sidebar
-from utils.db_manager import get_dati_magazzino, get_nome_azienda
-
+from utils.db_manager import get_dati_magazzino, get_nome_azienda,log_price_update
 # --- 0. CONTROLLO SICUREZZA ACCESSI ---
 if 'logged_in' not in st.session_state or not st.session_state.logged_in:
     st.switch_page("app.py")
@@ -131,6 +131,7 @@ with col_btn3:
                     
                     if nuovo_prezzo:
                         update_prezzo_prodotto(id_p, nuovo_prezzo)
+                        log_price_update(id_p, nuovo_prezzo)
                 except Exception as e:
                     st.error(f"Errore su {nome_p}: {e}")
                 
@@ -154,27 +155,25 @@ if st.session_state.ai_scan_active:
 
     st.info(st.session_state.risultato_scansione)
 
-# Sezione: Andamento di Mercato (Grafico)
+# Sezione: Andamento di Mercato (Grafico STORICO)
 if st.session_state.market_trend_active:
     st.markdown("### 📊 Andamento Storico del Mercato")
     
     with st.spinner("Generando il grafico dei trend... 📈"):
-        from utils.db_manager import get_dati_trend_temporale
+        from utils.db_manager import get_all_price_updates
         
-        df_trend = get_dati_trend_temporale(st.session_state.azienda_id)
+        df_trend = get_all_price_updates(st.session_state.azienda_id)
         
         if df_trend.empty:
-            st.warning("Non ci sono abbastanza dati nel magazzino per generare un trend.")
+            st.warning("Non ci sono aggiornamenti di prezzo registrati. Aggiorna i prezzi dei tuoi prodotti per visualizzare il grafico.")
         else:
-            # Trasformiamo i dati per Streamlit usando pivot_table
-            chart_data = df_trend.pivot_table(index='Data', columns='Prodotto', values='Prezzo (€)', aggfunc='mean')
+            # Trasformiamo i dati per il grafico
+            chart_data = df_trend.pivot_table(index='update_date', columns='Prodotto', values='price', aggfunc='mean')
             
-            # --- IL TRUCCO ---
-            # .interpolate(method='linear') unisce i puntini vuoti, 
-            # così se due prodotti hanno date diverse, le linee non si spezzano mai!
+            # Interpolazione per linee continue
             chart_data = chart_data.interpolate(method='linear')
             
-            # Mostriamo il grafico a linee
+            # Mostriamo il grafico
             st.line_chart(chart_data)
             
-            st.caption("Il grafico mostra l'evoluzione del prezzo dal momento del tuo acquisto (Prezzo Pagato) fino al valore di mercato attuale.")
+            st.caption("Il grafico mostra l'evoluzione dei prezzi nel tempo, registrata ad ogni aggiornamento.")

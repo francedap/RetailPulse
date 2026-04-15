@@ -11,6 +11,14 @@ per far partire il ""server"": streamlit run app.py
 
 agiornare il requirements.txt delle librerie: pip freeze > requirements.txt
 
+per popolare il DB:
+    python populate_db.py
+
+
+Credenziali di login:
+   nickname: utente1
+   Email: utente1@retailpulse.it
+   Password: password123
 
 RetailPulse/
 │

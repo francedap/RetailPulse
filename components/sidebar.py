@@ -17,10 +17,12 @@ def draw_sidebar(nome_azienda="RetailPulse 📈"):
                 {"role": "assistant", "content": "Ciao! Sono l'agente di supporto. Chiedimi pure informazioni sul tuo magazzino."}
             ]
 
+        # Visualizza tutti i messaggi
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
 
+        # ⬇️ INPUT SPOSTATO QUI (dopo i messaggi)
         if prompt := st.chat_input("Scrivi qui..."):
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):

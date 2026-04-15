@@ -49,9 +49,21 @@ def init_db():
         )
     ''')
 
+    # 4. Tabella Storico Prezzi
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS price_updates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_id INTEGER NOT NULL,
+            price DECIMAL(10, 2) NOT NULL,
+            update_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (product_id) REFERENCES products(id)
+        )
+    ''')
+
+    
+
     conn.commit()
     conn.close()
-
 
 def hash_password(password):
     """Cripta la password usando SHA-256 per non salvarla in chiaro nel DB."""
@@ -245,3 +257,41 @@ def estrai_prezzo_da_testo(testo):
     # Convertiamo e prendiamo il massimo (spesso l'IA cita il modello o quantità, il prezzo è il valore più alto)
     numeri_float = [float(n) for n in numeri]
     return max(numeri_float)
+
+def log_price_update(product_id, price):
+    """Registra un aggiornamento di prezzo nello storico."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO price_updates (product_id, price)
+        VALUES (?, ?)
+    ''', (product_id, price))
+    conn.commit()
+    conn.close()
+
+def get_price_history(product_id):
+    """Recupera lo storico prezzi di un prodotto."""
+    conn = sqlite3.connect(DB_PATH)
+    query = """
+        SELECT price, update_date 
+        FROM price_updates 
+        WHERE product_id = ?
+        ORDER BY update_date ASC
+    """
+    df = pd.read_sql_query(query, conn, params=(product_id,))
+    conn.close()
+    return df
+
+def get_all_price_updates(azienda_id):
+    """Recupera TUTTI gli aggiornamenti prezzi di tutti i prodotti di un'azienda."""
+    conn = sqlite3.connect(DB_PATH)
+    query = """
+        SELECT p.nome as Prodotto, pu.price, pu.update_date
+        FROM price_updates pu
+        JOIN prodotti p ON pu.product_id = p.id
+        WHERE p.id_azienda = ?
+        ORDER BY pu.update_date ASC
+    """
+    df = pd.read_sql_query(query, conn, params=(azienda_id,))
+    conn.close()
+    return df
