@@ -42,7 +42,7 @@ def cerca_prezzi_shopping(query: str) -> str:
         print(f"[Scraper] 🕵️‍♂️ Navigo in incognito come: {ua_casuale[:40]}...")
 
         # Avvia il browser passando l'User-Agent finto
-        browser = p.chromium.launch(headless=False)
+        browser = p.chromium.launch(headless=True)
         context = browser.new_context(user_agent=ua_casuale)
         page = context.new_page()
 
