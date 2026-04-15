@@ -1,11 +1,15 @@
 import os
 import re
 import random
+import sys          
+import asyncio
 from dotenv import load_dotenv
 from agno.agent import Agent
 from agno.models.ollama import Ollama
 from playwright.sync_api import sync_playwright
 
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 load_dotenv()
 # 1. DEFINIAMO IL NOSTRO TOOL CON ISTRUZIONI PIÙ RIGIDE
