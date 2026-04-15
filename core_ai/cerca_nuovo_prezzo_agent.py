@@ -58,8 +58,7 @@ def cerca_prezzi_shopping(query: str) -> str:
         print(f"[Scraper] 🌐 Navigo su: {url_ricerca}")
         
         page.goto(url_ricerca)
-        # Scatta una foto per capire se i cookie bloccano la visuale!
-        page.screenshot(path="prima_vista_del_bot.png")
+        
         page.wait_for_timeout(5000)
         try:
             # Cerca un qualsiasi pulsante con parole chiave di accettazione
@@ -71,7 +70,7 @@ def cerca_prezzi_shopping(query: str) -> str:
         except Exception:
             # Se non c'è il banner o fallisce, pazienza, continuiamo
             pass
-        page.screenshot(path="dopo_vista_del_bot.png")
+      
         testo_pagina = page.inner_text("body")
         
         browser.close()
