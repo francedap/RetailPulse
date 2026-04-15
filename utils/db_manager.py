@@ -1,8 +1,12 @@
 import sqlite3
 import pandas as pd
 import hashlib # Libreria integrata in Python per criptare le password
+import numpy as np
+from datetime import datetime, timedelta
+import re
 
 DB_PATH = "data/retailpulse.db"
+
 
 def init_db():
     """Inizializza il database con le tabelle relazionali necessarie."""
@@ -178,3 +182,66 @@ def delete_prodotto(prodotto_id):
 if __name__ == "__main__":
     init_db()
     print("Database e tabelle creati con successo!")
+
+def get_dati_trend_temporale(azienda_id):
+    """
+    Genera dati simulati per il trend di mercato dal momento dell'acquisto a oggi.
+    Crea un punto per OGNI GIORNO per garantire linee continue sul grafico.
+    """
+    import numpy as np
+    from datetime import datetime, timedelta
+    
+    conn = sqlite3.connect(DB_PATH)
+    query = """
+        SELECT nome, prezzo_pagato, prezzo_attuale, data_inserimento 
+        FROM prodotti 
+        WHERE id_azienda = ?
+    """
+    df = pd.read_sql_query(query, conn, params=(azienda_id,))
+    conn.close()
+
+    if df.empty:
+        return pd.DataFrame()
+
+    today = datetime.now().date()
+    all_data = []
+
+    for index, row in df.iterrows():
+        # Leggiamo la data di acquisto
+        data_acquisto = datetime.strptime(row['data_inserimento'], '%Y-%m-%d').date()
+        giorni_passati = (today - data_acquisto).days
+        
+        # Se il prodotto è stato aggiunto oggi, simuliamo 2 giorni per tracciare la linea
+        if giorni_passati < 1:
+            giorni_passati = 1
+            data_acquisto = today - timedelta(days=1)
+
+        # MAGIA: Creiamo un punto per OGNI SINGOLO GIORNO passato
+        for d in range(giorni_passati + 1):
+            data_punto = data_acquisto + timedelta(days=d)
+            quota = d / giorni_passati # Percentuale di tempo trascorso (da 0.0 a 1.0)
+            
+            # Calcoliamo il prezzo in quel giorno
+            prezzo_base = row['prezzo_pagato'] + (row['prezzo_attuale'] - row['prezzo_pagato']) * quota
+            
+            # Aggiungiamo un piccolo "rumore di mercato" casuale, ma non al primo o all'ultimo giorno
+            noise = prezzo_base * np.random.uniform(-0.015, 0.015) if 0 < d < giorni_passati else 0
+            
+            all_data.append({
+                "Data": data_punto,
+                "Prodotto": row['nome'],
+                "Prezzo (€)": round(prezzo_base + noise, 2)
+            })
+
+    return pd.DataFrame(all_data)
+
+def estrai_prezzo_da_testo(testo):
+    """Estrae il valore numerico più alto da una stringa (il prezzo)."""
+    testo_str = str(testo)
+    # Cerca numeri decimali o interi
+    numeri = re.findall(r"[-+]?\d*\.\d+|\d+", testo_str.replace(',', '.'))
+    if not numeri:
+        return None
+    # Convertiamo e prendiamo il massimo (spesso l'IA cita il modello o quantità, il prezzo è il valore più alto)
+    numeri_float = [float(n) for n in numeri]
+    return max(numeri_float)

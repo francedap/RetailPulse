@@ -12,6 +12,12 @@ from utils.db_manager import get_dati_magazzino, get_nome_azienda
 if 'logged_in' not in st.session_state or not st.session_state.logged_in:
     st.switch_page("app.py")
 
+# Inizializziamo le variabili di stato se non esistono
+if 'ai_scan_active' not in st.session_state:
+    st.session_state.ai_scan_active = False
+if 'market_trend_active' not in st.session_state:
+    st.session_state.market_trend_active = False
+
 # --- 1. RECUPERO DATI UTENTE E AZIENDA ---
 if 'nome_azienda' not in st.session_state:
     st.session_state.nome_azienda = get_nome_azienda(st.session_state.azienda_id)
@@ -76,23 +82,15 @@ with st.container(border=True):
 
 st.markdown("---")
 
-# 6. SEZIONE AZIONI E SUGGERIMENTI AI
+# --- 6. SEZIONE AZIONI E SUGGERIMENTI AI ---
 st.subheader("⚡ Azioni Intelligenti")
 
-col_btn1, col_btn2 = st.columns(2)
-
-if 'ai_scan_active' not in st.session_state:
-    st.session_state.ai_scan_active = False
-if 'market_trend_active' not in st.session_state:
-    st.session_state.market_trend_active = False
+col_btn1, col_btn2, col_btn3 = st.columns(3)
 
 with col_btn1:
     if st.button("🔍 Scansione Punti Deboli", use_container_width=True):
         st.session_state.ai_scan_active = True
         st.session_state.market_trend_active = False
-        
-        # AGGIUNTA: Cancelliamo la vecchia scansione dalla memoria
-        # così forziamo l'IA a ricalcolarla leggendo i dati freschi!
         if 'risultato_scansione' in st.session_state:
             del st.session_state['risultato_scansione']
 
@@ -101,19 +99,82 @@ with col_btn2:
         st.session_state.market_trend_active = True
         st.session_state.ai_scan_active = False 
 
-# --- LOGICA VISUALIZZAZIONE RISULTATI AI ---
+with col_btn3:
+    # --- NUOVO TASTO: AGGIORNAMENTO GLOBALE ---
+    if st.button("🔄 Aggiorna Prezzi Mercato", use_container_width=True, help="Scarica i prezzi reali per tutti i prodotti"):
+        if dati_magazzino.empty:
+            st.warning("Il magazzino è vuoto!")
+        else:
+            from core_ai.cerca_nuovo_prezzo_agent import crea_agente_prezzi
+            from utils.db_manager import update_prezzo_prodotto, estrai_prezzo_da_testo, get_prodotti_raw
+            
+            # Recuperiamo i dati grezzi per avere gli ID
+            prodotti = get_prodotti_raw(st.session_state.azienda_id)
+            totale = len(prodotti)
+            
+            # Interfaccia di caricamento
+            status_text = st.empty()
+            progress_bar = st.progress(0)
+            
+            agente = crea_agente_prezzi()
+            
+            for i, riga in prodotti.iterrows():
+                nome_p = riga['nome']
+                id_p = riga['id']
+                
+                status_text.text(f"Aggiornamento ({i+1}/{totale}): {nome_p}...")
+                
+                try:
+                    # Chiamata all'IA
+                    risposta = agente.run(f"Cerca il prezzo attuale di {nome_p} e scrivi solo il valore medio.")
+                    nuovo_prezzo = estrai_prezzo_da_testo(risposta.content)
+                    
+                    if nuovo_prezzo:
+                        update_prezzo_prodotto(id_p, nuovo_prezzo)
+                except Exception as e:
+                    st.error(f"Errore su {nome_p}: {e}")
+                
+                progress_bar.progress((i + 1) / totale)
+            
+            status_text.success("✅ Tutti i prezzi sono stati aggiornati!")
+            st.rerun()
+
+st.markdown("---")
+
+# --- 7. LOGICA VISUALIZZAZIONE RISULTATI ---
+
+# Sezione: Scansione Punti Deboli
 if st.session_state.ai_scan_active:
-    st.markdown("### Risultati Scansione Inefficienze")
+    st.markdown("### 🔍 Risultati Scansione Inefficienze")
     
-    # Controlliamo se abbiamo già il risultato in memoria
     if 'risultato_scansione' not in st.session_state:
         with st.spinner("Analisi in corso... L'IA sta cercando i colli di bottiglia 🕵️‍♂️"):
-            
-            # Chiamiamo la nostra nuova funzione passando TUTTO il DataFrame
             testo_scansione = analizza_punti_deboli(dati_magazzino)
-            
-            # Salviamo il risultato in memoria
             st.session_state.risultato_scansione = testo_scansione
 
-    # Mostriamo il risultato
     st.info(st.session_state.risultato_scansione)
+
+# Sezione: Andamento di Mercato (Grafico)
+if st.session_state.market_trend_active:
+    st.markdown("### 📊 Andamento Storico del Mercato")
+    
+    with st.spinner("Generando il grafico dei trend... 📈"):
+        from utils.db_manager import get_dati_trend_temporale
+        
+        df_trend = get_dati_trend_temporale(st.session_state.azienda_id)
+        
+        if df_trend.empty:
+            st.warning("Non ci sono abbastanza dati nel magazzino per generare un trend.")
+        else:
+            # Trasformiamo i dati per Streamlit usando pivot_table
+            chart_data = df_trend.pivot_table(index='Data', columns='Prodotto', values='Prezzo (€)', aggfunc='mean')
+            
+            # --- IL TRUCCO ---
+            # .interpolate(method='linear') unisce i puntini vuoti, 
+            # così se due prodotti hanno date diverse, le linee non si spezzano mai!
+            chart_data = chart_data.interpolate(method='linear')
+            
+            # Mostriamo il grafico a linee
+            st.line_chart(chart_data)
+            
+            st.caption("Il grafico mostra l'evoluzione del prezzo dal momento del tuo acquisto (Prezzo Pagato) fino al valore di mercato attuale.")
