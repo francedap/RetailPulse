@@ -53,7 +53,7 @@ with tab_add:
             quantita = st.number_input("Quantità", min_value=1, step=1)
             prezzo_pagato = st.number_input("Prezzo Pagato/Costo (€)", min_value=0.0, step=10.0, format="%.2f")
         
-        if st.form_submit_button("💾 Salva nel Database", use_container_width=True):
+        if st.form_submit_button("💾 Salva nel Database", width='stretch'):
             if nome.strip() != "" and prezzo_pagato > 0:
                 add_prodotto(st.session_state.azienda_id, nome, descrizione, categoria, quantita, prezzo_pagato, prezzo_pagato)
                 st.success(f"✅ '{nome}' aggiunto!")
@@ -72,7 +72,7 @@ with tab_view:
         # Visualizzazione Tabella
         df_display = df_prodotti.copy().drop(columns=['id'])
         df_display.columns = ['Nome', 'Descrizione', 'Categoria', 'Quantità', 'Prezzo Pagato (€)', 'Prezzo Attuale (€)', 'Data Inserimento']
-        st.dataframe(df_display, use_container_width=True, hide_index=True)
+        st.dataframe(df_display, width='stretch', hide_index=True)
         
         st.markdown("---")
         
@@ -88,7 +88,7 @@ with tab_view:
             prodotto_id = opzioni_prodotti[prodotto_scelto_nome]
 
         with col_upd:
-            if st.button("Aggiorna Prezzo ⚡", use_container_width=True):
+            if st.button("Aggiorna Prezzo ⚡", width='stretch'):
                 st.info(f"In attesa dell'IA per cercare il prezzo di '{prodotto_scelto_nome}'.")
             
                 prompt = f"Cerca {prodotto_scelto_nome} e scrivi solo il prezzo medio."
@@ -120,7 +120,7 @@ with tab_view:
                     st.error(f"Errore durante l'aggiornamento: {e}")
 
         with col_del:
-            with st.popover("Elimina 🗑️", use_container_width=True):
+            with st.popover("Elimina 🗑️", width='stretch'):
                 st.warning(f"Vuoi davvero eliminare '{prodotto_scelto_nome}'?")
                 if st.button("Sì, elimina definitivamente", type="primary"):
                     delete_prodotto(prodotto_id)

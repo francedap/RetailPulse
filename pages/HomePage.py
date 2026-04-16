@@ -63,7 +63,7 @@ st.subheader("🧠 Sintesi Strategica Generata dall'IA")
 
 with st.container(border=True):
     # 1. Creiamo il pulsante
-    if st.button("Genera Sintesi 🤖", use_container_width=True):
+    if st.button("Genera Sintesi 🤖", width='stretch'):
         
         # 2. Se l'utente clicca, mostriamo il caricamento
         with st.spinner("L'Intelligenza Artificiale sta analizzando i dati del tuo magazzino... ⏳"):
@@ -88,20 +88,20 @@ st.subheader("⚡ Azioni Intelligenti")
 col_btn1, col_btn2, col_btn3 = st.columns(3)
 
 with col_btn1:
-    if st.button("🔍 Scansione Punti Deboli", use_container_width=True):
+    if st.button("🔍 Scansione Punti Deboli", width='stretch'):
         st.session_state.ai_scan_active = True
         st.session_state.market_trend_active = False
         if 'risultato_scansione' in st.session_state:
             del st.session_state['risultato_scansione']
 
 with col_btn2:
-    if st.button("📊 Mostra Andamento Mercato", use_container_width=True):
+    if st.button("📊 Mostra Andamento Mercato", width='stretch'):
         st.session_state.market_trend_active = True
         st.session_state.ai_scan_active = False 
 
 with col_btn3:
     # --- NUOVO TASTO: AGGIORNAMENTO GLOBALE ---
-    if st.button("🔄 Aggiorna Prezzi Mercato", use_container_width=True, help="Scarica i prezzi reali per tutti i prodotti"):
+    if st.button("🔄 Aggiorna Prezzi Mercato", width='stretch', help="Scarica i prezzi reali per tutti i prodotti"):
         if dati_magazzino.empty:
             st.warning("Il magazzino è vuoto!")
         else:

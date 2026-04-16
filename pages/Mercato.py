@@ -34,7 +34,7 @@ col_search, col_btn = st.columns([3, 1])
 with col_search:
     ricerca_prodotto = st.text_input("Nome del prodotto (es. PlayStation 5 Pro)", label_visibility="collapsed")
 with col_btn:
-    btn_cerca = st.button("Analizza Prodotto ⚡", use_container_width=True, type="primary")
+    btn_cerca = st.button("Analizza Prodotto ⚡", width='stretch', type="primary")
 
 if btn_cerca:
     if ricerca_prodotto.strip():
@@ -63,7 +63,7 @@ col_cat, col_btn_cat = st.columns([3, 1])
 with col_cat:
     categoria_scelta = st.selectbox("Seleziona una categoria da analizzare:", categorie_utente, label_visibility="collapsed")
 with col_btn_cat:
-    btn_trend = st.button("Genera Trend 📈", use_container_width=True)
+    btn_trend = st.button("Genera Trend 📈", width='stretch')
 
 if btn_trend:
     with st.spinner(f"Sto raccogliendo i dati globali per la categoria '{categoria_scelta}'... ⏳"):
@@ -78,7 +78,7 @@ st.markdown("---")
 st.subheader("🧠 Report Strategico di Mercato")
 st.write("Genera un resoconto completo basato sul confronto tra il tuo magazzino e il mercato globale.")
 
-if st.button("Genera Report Macroecomico AI 🌍", use_container_width=True):
+if st.button("Genera Report Macroecomico AI 🌍", width='stretch'):
     with st.spinner("Il Chief Strategy Officer virtuale sta incrociando i tuoi dati con il mercato globale... ⏳"):
         # Passiamo l'intero DataFrame all'IA
         risultato_strategico = genera_report_strategico_mercato(df_magazzino)

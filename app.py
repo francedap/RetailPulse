@@ -33,7 +33,7 @@ def show_auth_page():
         with st.form("login_form"):
             email = st.text_input("Email")
             password = st.text_input("Password", type="password")
-            submit_login = st.form_submit_button("Entra", use_container_width=True)
+            submit_login = st.form_submit_button("Entra", width='stretch')
             
             if submit_login:
                 user_data = verify_login(email, password)
@@ -57,7 +57,7 @@ def show_auth_page():
             new_password = st.text_input("Password", type="password")
             new_azienda = st.text_input("Nome della tua Azienda (es. Mario Sneakers Srl)")
             
-            submit_register = st.form_submit_button("Registrati", use_container_width=True)
+            submit_register = st.form_submit_button("Registrati", width='stretch')
             
             if submit_register:
                 if new_nick and new_email and new_password and new_azienda:
