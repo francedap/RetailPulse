@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from core_ai.strategic_advisor_agent import genera_sintesi_strategica
 from core_ai.inventory_analyst import analizza_punti_deboli
-
+from utils.db_manager import get_all_price_updates
 
 # Importiamo la sidebar e le funzioni del DB
 from components.sidebar import draw_sidebar
@@ -18,14 +18,13 @@ if 'ai_scan_active' not in st.session_state:
 if 'market_trend_active' not in st.session_state:
     st.session_state.market_trend_active = False
 
-# --- 1. RECUPERO DATI UTENTE E AZIENDA ---
 if 'nome_azienda' not in st.session_state:
     st.session_state.nome_azienda = get_nome_azienda(st.session_state.azienda_id)
 
 nome_azienda = st.session_state.nome_azienda
 draw_sidebar(nome_azienda)
 
-# --- 2. COLLEGAMENTO AL DATABASE REALE ---
+
 dati_magazzino = get_dati_magazzino(st.session_state.azienda_id)
 
 if not dati_magazzino.empty:
@@ -100,8 +99,7 @@ with col_btn2:
         st.session_state.ai_scan_active = False 
 
 with col_btn3:
-    # --- NUOVO TASTO: AGGIORNAMENTO GLOBALE ---
-    if st.button("🔄 Aggiorna Prezzi Mercato", width='stretch', help="Scarica i prezzi reali per tutti i prodotti"):
+    if st.button("🔄 Aggiorna Tutti i Prezzi del Magazzino", width='stretch', help="Scarica i prezzi reali per tutti i prodotti"):
         if dati_magazzino.empty:
             st.warning("Il magazzino è vuoto!")
         else:
@@ -160,7 +158,6 @@ if st.session_state.market_trend_active:
     st.markdown("### 📊 Andamento Storico del Mercato")
     
     with st.spinner("Generando il grafico dei trend... 📈"):
-        from utils.db_manager import get_all_price_updates
         
         df_trend = get_all_price_updates(st.session_state.azienda_id)
         

@@ -6,7 +6,7 @@ from agno.models.ollama import Ollama
 def analizza_punti_deboli(df_magazzino):
     """
     Legge la tabella del magazzino e trova il prodotto con le performance peggiori
-    in base a giacenza e margine.
+    in base a giacenza, margine e andamento dei prezzi.
     """
     
     # Se il magazzino è vuoto, non c'è nulla da analizzare
@@ -18,11 +18,11 @@ def analizza_punti_deboli(df_magazzino):
         model=Ollama(id="llama3.2"),
         description="Sei un analista esperto di inventario e margini di profitto.",
         instructions=[
-            "Analizza attentamente la tabella dati che riceverai.",
-            "Individua il prodotto con il problema più critico (es. in perdita economica, oppure fermo in magazzino da troppi giorni senza vendere).",
-            "Nomina chiaramente il prodotto e spiega all'utente perché rappresenta un problema (es. 'capitale immobilizzato').",
-            "Dai un consiglio pratico e diretto per risolvere la situazione (es. 'Consiglio uno sconto del 10%').",
-            "Sii conciso, professionale e usa le emoji per rendere il testo piacevole."
+            "Analizza attentamente le tabelle di dati che riceverai.",
+            "Individua il prodotto con il problema più critico.",
+            "Nomina chiaramente il prodotto e spiega all'utente perché rappresenta un problema.",
+            "Dai un consiglio pratico e diretto per risolvere la situazione.",
+            "Sii conciso e breve, professionale e usa le emoji per rendere il testo piacevole."
         ]
     )
     
@@ -36,6 +36,7 @@ def analizza_punti_deboli(df_magazzino):
     Per favore, trova il punto debole più critico e dammi il tuo suggerimento.
     """
     
+ 
     # 3. Inviamo tutto all'agente
     risposta = agente_inventario.run(prompt)
     

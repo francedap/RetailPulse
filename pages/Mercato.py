@@ -1,11 +1,9 @@
-# File: pages/Mercato.py
-
 import streamlit as st
 import pandas as pd
 from components.sidebar import draw_sidebar
 from utils.db_manager import get_prodotti_raw
 
-# IMPORTIAMO LE NOSTRE NUOVE FUNZIONI AI
+
 from core_ai.market_explorer import (
     analizza_opportunita_prodotto, 
     analizza_trend_categoria, 
@@ -69,7 +67,8 @@ if btn_trend:
     with st.spinner(f"Sto raccogliendo i dati globali per la categoria '{categoria_scelta}'... ⏳"):
         # Chiamiamo l'IA per il report sulla categoria
         risultato_trend = analizza_trend_categoria(categoria_scelta)
-        st.success(risultato_trend)
+        with st.container(border=True):
+            st.info(risultato_trend)
 
 st.markdown("---")
 
@@ -86,4 +85,7 @@ if st.button("Genera Report Macroecomico AI 🌍", width='stretch'):
         # Mostriamo il risultato. 
         # Usiamo un container con bordo per farlo sembrare un vero documento ufficiale!
         with st.container(border=True):
-            st.markdown(risultato_strategico)
+            st.info(risultato_strategico)
+
+
+            

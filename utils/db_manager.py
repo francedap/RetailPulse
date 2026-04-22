@@ -56,7 +56,7 @@ def init_db():
             product_id INTEGER NOT NULL,
             price DECIMAL(10, 2) NOT NULL,
             update_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (product_id) REFERENCES products(id)
+            FOREIGN KEY (product_id) REFERENCES prodotti (id)
         )
     ''')
 
@@ -130,13 +130,18 @@ def get_dati_magazzino(azienda_id):
     conn = sqlite3.connect(DB_PATH)
     query = """
         SELECT 
-            nome as Prodotto,
-            prezzo_pagato as Prezzo_Acquisto,
-            prezzo_attuale as Prezzo_Mercato,
-            quantita as Quantita,
-            CAST((julianday('now') - julianday(data_inserimento)) AS INTEGER) as Giorno_Giacenza
-        FROM prodotti
-        WHERE id_azienda = ?
+    p.nome as Prodotto,
+    p.prezzo_pagato as Prezzo_Acquisto,
+    p.prezzo_attuale as Prezzo_Mercato,
+    p.quantita as Quantita,
+    CAST((julianday('now') - julianday(p.data_inserimento)) AS INTEGER) as Giorno_Giacenza,
+    (
+        SELECT GROUP_CONCAT(price || ' (' || strftime('%d/%m/%Y', update_date) || ')', ' | ')
+        FROM price_updates 
+        WHERE product_id = p.id
+    ) as Storico_Prezzi
+FROM prodotti p
+WHERE p.id_azienda = ?
     """
     df = pd.read_sql_query(query, conn, params=(azienda_id,))
     conn.close()
@@ -189,63 +194,6 @@ def delete_prodotto(prodotto_id):
     conn.commit()
     conn.close()
 
-
-# Puoi richiamare init_db() in fondo a questo file per testarlo subito
-if __name__ == "__main__":
-    init_db()
-    print("Database e tabelle creati con successo!")
-
-def get_dati_trend_temporale(azienda_id):
-    """
-    Genera dati simulati per il trend di mercato dal momento dell'acquisto a oggi.
-    Crea un punto per OGNI GIORNO per garantire linee continue sul grafico.
-    """
-    import numpy as np
-    from datetime import datetime, timedelta
-    
-    conn = sqlite3.connect(DB_PATH)
-    query = """
-        SELECT nome, prezzo_pagato, prezzo_attuale, data_inserimento 
-        FROM prodotti 
-        WHERE id_azienda = ?
-    """
-    df = pd.read_sql_query(query, conn, params=(azienda_id,))
-    conn.close()
-
-    if df.empty:
-        return pd.DataFrame()
-
-    today = datetime.now().date()
-    all_data = []
-
-    for index, row in df.iterrows():
-        # Leggiamo la data di acquisto
-        data_acquisto = datetime.strptime(row['data_inserimento'], '%Y-%m-%d').date()
-        giorni_passati = (today - data_acquisto).days
-        
-        # Se il prodotto è stato aggiunto oggi, simuliamo 2 giorni per tracciare la linea
-        if giorni_passati < 1:
-            giorni_passati = 1
-            data_acquisto = today - timedelta(days=1)
-
-        # MAGIA: Creiamo un punto per OGNI SINGOLO GIORNO passato
-        for d in range(giorni_passati + 1):
-            data_punto = data_acquisto + timedelta(days=d)
-            quota = d / giorni_passati # Percentuale di tempo trascorso (da 0.0 a 1.0)
-            
-            # Calcoliamo il prezzo in quel giorno
-            prezzo_base = row['prezzo_pagato'] + (row['prezzo_attuale'] - row['prezzo_pagato']) * quota
-            
-            # Aggiungiamo un piccolo "rumore di mercato" casuale, ma non al primo o all'ultimo giorno
-            noise = prezzo_base * np.random.uniform(-0.015, 0.015) if 0 < d < giorni_passati else 0
-            
-            all_data.append({
-                "Data": data_punto,
-                "Prodotto": row['nome'],
-                "Prezzo (€)": round(prezzo_base + noise, 2)
-            })
-
-    return pd.DataFrame(all_data)
 
 def estrai_prezzo_da_testo(testo):
     """Estrae il valore numerico più alto da una stringa (il prezzo)."""
