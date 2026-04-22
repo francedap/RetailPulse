@@ -163,4 +163,4 @@ L'applicazione si aprirà automaticamente nel tuo browser predefinito (tipicamen
 2. **Dashboard (Home):** Visualizza i KPI, avvia la "Scansione Punti Deboli" per trovare gli articoli che stanno danneggiando i tuoi margini.
 3. **Magazzino:** Visualizza la tabella dei prodotti. Usa il pulsante **"Aggiorna Prezzo ⚡"** per innescare Playwright: vedrai il sistema aprire un browser in modalità headless, cercare il prodotto sul web, parsare i prezzi e aggiornare il database.
 4. **Assistente:** Apri la barra laterale (Sidebar) a sinistra e digita una domanda, ad esempio: *"Qual è il prodotto che mi sta facendo perdere più soldi?"*. L'agente leggerà il tuo DB e ti risponderà in tempo reale.
-```
+
