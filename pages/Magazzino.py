@@ -40,6 +40,23 @@ st.markdown("---")
 
 tab_view, tab_add = st.tabs(["📋 Visualizza Inventario", " ➕ Aggiungi Prodotto"])
 
+
+# --- PREPARAZIONE DELLE CATEGORIE ---
+# Leggiamo i prodotti esistenti per capire quali categorie ci sono già nel database
+df_prodotti = get_prodotti_raw(st.session_state.azienda_id)
+
+# Categorie base di default
+categorie_disponibili = ["Sneakers", "Elettronica", "Abbigliamento", "Accessori", "Altro"]
+
+# Se ci sono prodotti nel database, estraiamo le loro categorie e le uniamo a quelle base
+if not df_prodotti.empty:
+    categorie_dal_db = df_prodotti['categoria'].dropna().unique().tolist()
+    # Uniamo le liste ed eliminiamo i duplicati (mantenendo l'ordine)
+    for cat in categorie_dal_db:
+        if cat not in categorie_disponibili:
+            categorie_disponibili.append(cat)
+
+
 # --- SCHEDA: AGGIUNGI PRODOTTO ---
 with tab_add:
     st.subheader("Inserisci un nuovo articolo")
@@ -47,23 +64,35 @@ with tab_add:
         col1, col2 = st.columns(2)
         with col1:
             nome = st.text_input("Nome Prodotto")
-            categoria = st.selectbox("Categoria", ["Sneakers", "Elettronica", "Abbigliamento", "Accessori", "Altro"])
+            
+            # --- MODIFICA CATEGORIE QUI ---
+            # 1. Mostriamo il menu a tendina con le categorie dinamiche
+            categoria_selezionata = st.selectbox("Scegli una Categoria", categorie_disponibili)
+            # 2. Aggiungiamo un campo di testo per crearne una nuova
+            nuova_categoria = st.text_input("OPPURE scrivi una Nuova Categoria", placeholder="Es. Videogiochi, Arredamento...")
+            
             descrizione = st.text_area("Descrizione o Note (Opzionale)", height=100)
+            
         with col2:
             quantita = st.number_input("Quantità", min_value=1, step=1)
             prezzo_pagato = st.number_input("Prezzo Pagato/Costo (€)", min_value=0.0, step=10.0, format="%.2f")
         
         if st.form_submit_button("💾 Salva nel Database", width='stretch'):
+            # Decidiamo quale categoria usare:
+            # Se l'utente ha scritto qualcosa nel campo di testo, usiamo quello.
+            # Altrimenti usiamo la scelta del menu a tendina.
+            categoria_finale = nuova_categoria.strip() if nuova_categoria.strip() != "" else categoria_selezionata
+
             if nome.strip() != "" and prezzo_pagato > 0:
-                add_prodotto(st.session_state.azienda_id, nome, descrizione, categoria, quantita, prezzo_pagato, prezzo_pagato)
-                st.success(f"✅ '{nome}' aggiunto!")
-                time.sleep(1)
+                add_prodotto(st.session_state.azienda_id, nome, descrizione, categoria_finale, quantita, prezzo_pagato, prezzo_pagato)
+                st.success(f"✅ '{nome}' aggiunto nella categoria '{categoria_finale}'!")
+                time.sleep(1.5)
                 st.rerun()
+            else:
+                st.error("Assicurati di inserire il Nome e un Prezzo maggiore di 0.")
 
 # --- SCHEDA: VISUALIZZA, AGGIORNA E RIMUOVI ---
 with tab_view:
-    df_prodotti = get_prodotti_raw(st.session_state.azienda_id)
-    
     if df_prodotti.empty:
         st.info("Il tuo magazzino è vuoto. Spostati sulla scheda 'Aggiungi Prodotto' per iniziare.")
     else:
@@ -112,6 +141,7 @@ with tab_view:
                         log_price_update(prodotto_id, nuovo_prezzo)
                         st.success(f"Prezzo aggiornato: €{nuovo_prezzo:.2f}")
                         
+                        time.sleep(1.5)
                         st.rerun() #questo serve a ricaricare la pagina
                     else:
                         st.error(f"L'IA non ha restituito un prezzo valido. Risposta grezza: {risposta_raw}")
