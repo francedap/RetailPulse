@@ -1,6 +1,6 @@
 import sqlite3
 import pandas as pd
-import hashlib # Libreria integrata in Python per criptare le password
+import hashlib
 import numpy as np
 from datetime import datetime, timedelta
 import re
@@ -13,7 +13,7 @@ def init_db():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    # 1. Tabella Utenti
+    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS utenti (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -23,7 +23,7 @@ def init_db():
         )
     ''')
 
-    # 2. Tabella Aziende
+    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS aziende (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,7 +33,7 @@ def init_db():
         )
     ''')
 
-    # 3. Tabella Prodotti
+    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS prodotti (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -49,7 +49,7 @@ def init_db():
         )
     ''')
 
-    # 4. Tabella Storico Prezzi
+    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS price_updates (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -75,15 +75,13 @@ def register_user(nickname, email, password, nome_azienda):
     cursor = conn.cursor()
     
     try:
-        # 1. Inserisce l'utente con la password criptata
         cursor.execute('''
             INSERT INTO utenti (nickname, email, password) 
             VALUES (?, ?, ?)
         ''', (nickname, email, hash_password(password)))
         
         user_id = cursor.lastrowid # Prende l'ID appena generato
-        
-        # 2. Inserisce l'azienda collegandola all'utente appena creato
+       
         cursor.execute('''
             INSERT INTO aziende (nome, id_proprietario) 
             VALUES (?, ?)
@@ -92,29 +90,27 @@ def register_user(nickname, email, password, nome_azienda):
         conn.commit()
         return True
     except sqlite3.IntegrityError:
-        # Questo errore scatta perché abbiamo impostato l'email come UNIQUE nel DB
         return False 
     finally:
         conn.close()
+
+
 
 def verify_login(email, password):
     """Verifica le credenziali e restituisce i dati dell'utente se corrette."""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    
-    # Cerca l'utente facendo il JOIN con l'azienda per recuperare entrambi gli ID
     cursor.execute('''
         SELECT u.id, a.id, u.nickname 
         FROM utenti u
         JOIN aziende a ON u.id = a.id_proprietario
         WHERE u.email = ? AND u.password = ?
     ''', (email, hash_password(password)))
-    
     result = cursor.fetchone()
     conn.close()
-    
-    # Restituisce (user_id, azienda_id, nickname) se trovato, altrimenti None
     return result
+
+
 
 def get_nome_azienda(azienda_id):
     """Recupera il nome dell'azienda dato il suo ID."""
@@ -124,6 +120,9 @@ def get_nome_azienda(azienda_id):
     result = cursor.fetchone()
     conn.close()
     return result[0] if result else "La Tua Azienda"
+
+
+
 
 def get_dati_magazzino(azienda_id):
     """Estrae i prodotti e calcola i giorni di giacenza usando SQL."""
@@ -147,12 +146,13 @@ WHERE p.id_azienda = ?
     conn.close()
     return df
 
+
+
+
 def add_prodotto(id_azienda, nome, descrizione, categoria, quantita, prezzo_pagato, prezzo_attuale):
     """Inserisce un nuovo prodotto nel database associandolo all'azienda."""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    
-    # La data di inserimento viene presa in automatico (CURRENT_DATE nel DB)
     cursor.execute('''
         INSERT INTO prodotti (id_azienda, nome, descrizione, categoria, quantita, prezzo_pagato, prezzo_attuale)
         VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -160,6 +160,8 @@ def add_prodotto(id_azienda, nome, descrizione, categoria, quantita, prezzo_paga
     
     conn.commit()
     conn.close()
+
+
 
 def get_prodotti_raw(azienda_id):
     """Recupera tutti i campi dei prodotti per la tabella del magazzino."""
@@ -174,6 +176,8 @@ def get_prodotti_raw(azienda_id):
     conn.close()
     return df
 
+
+
 def update_prezzo_prodotto(prodotto_id, nuovo_prezzo):
     """Aggiorna il prezzo attuale di un prodotto nel database."""
     conn = sqlite3.connect(DB_PATH)
@@ -186,6 +190,8 @@ def update_prezzo_prodotto(prodotto_id, nuovo_prezzo):
     conn.commit()
     conn.close()
 
+
+
 def delete_prodotto(prodotto_id):
     """Rimuove definitivamente un prodotto dal database."""
     conn = sqlite3.connect(DB_PATH)
@@ -195,6 +201,7 @@ def delete_prodotto(prodotto_id):
     conn.close()
 
 
+
 def estrai_prezzo_da_testo(testo):
     """Estrae il valore numerico più alto da una stringa (il prezzo)."""
     testo_str = str(testo)
@@ -202,9 +209,10 @@ def estrai_prezzo_da_testo(testo):
     numeri = re.findall(r"[-+]?\d*\.\d+|\d+", testo_str.replace(',', '.'))
     if not numeri:
         return None
-    # Convertiamo e prendiamo il massimo (spesso l'IA cita il modello o quantità, il prezzo è il valore più alto)
     numeri_float = [float(n) for n in numeri]
     return max(numeri_float)
+
+
 
 def log_price_update(product_id, price):
     """Registra un aggiornamento di prezzo nello storico."""
@@ -216,6 +224,8 @@ def log_price_update(product_id, price):
     ''', (product_id, price))
     conn.commit()
     conn.close()
+
+
 
 def get_price_history(product_id):
     """Recupera lo storico prezzi di un prodotto."""
@@ -229,6 +239,8 @@ def get_price_history(product_id):
     df = pd.read_sql_query(query, conn, params=(product_id,))
     conn.close()
     return df
+
+
 
 def get_all_price_updates(azienda_id):
     """Recupera TUTTI gli aggiornamenti prezzi di tutti i prodotti di un'azienda."""

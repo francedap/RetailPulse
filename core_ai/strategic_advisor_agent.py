@@ -1,11 +1,8 @@
-# File: core_ai/strategic_advisor_agent.py
 
 from agno.agent import Agent
 from agno.models.ollama import Ollama
-from dotenv import load_dotenv
 
-# Carichiamo le variabili d'ambiente (se ne hai bisogno in futuro)
-load_dotenv()
+
 
 def genera_sintesi_strategica(valore_totale, margine_totale, in_perdita):
     """
@@ -13,9 +10,9 @@ def genera_sintesi_strategica(valore_totale, margine_totale, in_perdita):
     all'Intelligenza Artificiale per generare un breve report testuale.
     """
     
-    # 1. Configuriamo il nostro agente
+    
     agente_stratega = Agent(
-        model=Ollama(id="llama3.2"), # Usiamo lo stesso modello che hai usato negli altri file
+        model=Ollama(id="llama3.2"), 
         description="Sei un consulente aziendale esperto di logistica e vendite.",
         instructions=[
             "Il tuo compito è scrivere un brevissimo riassunto (massimo 3 o 4 frasi) sullo stato di salute del magazzino.",
@@ -26,7 +23,7 @@ def genera_sintesi_strategica(valore_totale, margine_totale, in_perdita):
         ]
     )
     
-    # 2. Creiamo il messaggio che l'agente leggerà (il prompt)
+    
     prompt_dati = f"""
     Ecco i dati attuali del magazzino dell'utente:
     - Valore Totale Stimato: € {valore_totale:.2f}
@@ -36,8 +33,8 @@ def genera_sintesi_strategica(valore_totale, margine_totale, in_perdita):
     Per favore, scrivi la tua sintesi strategica basandoti su questi numeri.
     """
     
-    # 3. Facciamo elaborare la risposta all'agente
+    
     risposta = agente_stratega.run(prompt_dati)
     
-    # Restituiamo solo il testo della risposta
+    
     return risposta.content

@@ -1,5 +1,3 @@
-# File: core_ai/inventory_analyst.py
-
 from agno.agent import Agent
 from agno.models.ollama import Ollama
 
@@ -9,11 +7,11 @@ def analizza_punti_deboli(df_magazzino):
     in base a giacenza, margine e andamento dei prezzi.
     """
     
-    # Se il magazzino è vuoto, non c'è nulla da analizzare
+    
     if df_magazzino.empty:
         return "Il tuo magazzino è vuoto. Aggiungi qualche prodotto per iniziare l'analisi!"
 
-    # 1. Configuriamo l'agente analista
+    
     agente_inventario = Agent(
         model=Ollama(id="llama3.2"),
         description="Sei un analista esperto di inventario e margini di profitto.",
@@ -26,7 +24,7 @@ def analizza_punti_deboli(df_magazzino):
         ]
     )
     
-    # 2. Trasformiamo la tabella (DataFrame) in un testo leggibile per l'IA
+    
     dati_testo = df_magazzino.to_markdown(index=False)
     
     prompt = f"""
@@ -37,7 +35,7 @@ def analizza_punti_deboli(df_magazzino):
     """
     
  
-    # 3. Inviamo tutto all'agente
+    
     risposta = agente_inventario.run(prompt)
     
     return risposta.content

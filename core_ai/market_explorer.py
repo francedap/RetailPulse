@@ -1,5 +1,3 @@
-# File: core_ai/market_explorer.py
-
 from agno.agent import Agent
 from agno.models.ollama import Ollama
 import pandas as pd

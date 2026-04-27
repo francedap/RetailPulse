@@ -4,8 +4,6 @@ from dotenv import load_dotenv
 import pandas as pd
 from utils.db_manager import get_prodotti_raw # Importiamo la funzione per leggere il DB
 
-load_dotenv() 
-
 assistente_magazzino = Agent(
     model=Ollama(id="llama3.2"),
     description="Sei un assistente virtuale per l'app RetailPulse, esperto di gestione magazzino e vendite.",
@@ -19,21 +17,18 @@ assistente_magazzino = Agent(
     markdown=True
 )
 
-# Aggiungiamo l'ID dell'azienda come parametro obbligatorio
+
 def chiedi_all_assistente(messaggio_utente: str, azienda_id: int) -> str:
     """Recupera i dati, crea un prompt arricchito e lo invia all'agente."""
     
-    # 1. Recuperiamo i dati grezzi dal database
     df_prodotti = get_prodotti_raw(azienda_id)
     
-    # 2. Trasformiamo la tabella in testo per farla leggere all'IA
     if df_prodotti.empty:
         contesto_dati = "Il magazzino attualmente è VUOTO. Non ci sono prodotti."
     else:
-        # Trasforma il DataFrame in una stringa leggibile (formato Markdown)
+        
         contesto_dati = f"Ecco l'attuale inventario del magazzino:\n{df_prodotti.to_markdown(index=False)}"
         
-    # 3. Creiamo il super-messaggio segreto da inviare a Gemini
     prompt_arricchito = f"""
     INFORMAZIONI DI CONTESTO (Non dirlo all'utente, usale solo per rispondere):
     {contesto_dati}
@@ -42,6 +37,5 @@ def chiedi_all_assistente(messaggio_utente: str, azienda_id: int) -> str:
     {messaggio_utente}
     """
     
-    # 4. Inviamo tutto a Ollama
     risposta = assistente_magazzino.run(prompt_arricchito)
     return risposta.content

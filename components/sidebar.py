@@ -9,7 +9,7 @@ def draw_sidebar(nome_azienda="RetailPulse 📈"):
         st.title(f"{nome_azienda}")
         st.markdown("---")
         
-        # --- SEZIONE CHAT AI ---
+    
         st.subheader("🤖 Assistente di Supporto")
         
         if "messages" not in st.session_state:
@@ -17,12 +17,12 @@ def draw_sidebar(nome_azienda="RetailPulse 📈"):
                 {"role": "assistant", "content": "Ciao! Sono l'agente di supporto. Chiedimi pure informazioni sul tuo magazzino."}
             ]
 
-        # Visualizza tutti i messaggi
+        
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
 
-        # ⬇️ INPUT SPOSTATO QUI (dopo i messaggi)
+        
         if prompt := st.chat_input("Scrivi qui..."):
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
@@ -31,10 +31,8 @@ def draw_sidebar(nome_azienda="RetailPulse 📈"):
             with st.chat_message("assistant"):
                 with st.spinner("Sto guardando nel magazzino... 📦"):
                     
-                    # Recuperiamo l'ID dell'azienda dalla memoria della sessione
                     mio_id_azienda = st.session_state.azienda_id
                     
-                    # Passiamo sia la domanda che l'ID all'assistente
                     response = chiedi_all_assistente(prompt, mio_id_azienda)
                     
                     st.markdown(response)
