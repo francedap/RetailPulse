@@ -4,15 +4,19 @@ import numpy as np
 from core_ai.strategic_advisor_agent import genera_sintesi_strategica
 from core_ai.inventory_analyst import analizza_punti_deboli
 from utils.db_manager import get_all_price_updates
+from core_ai.cerca_nuovo_prezzo_agent import crea_agente_prezzi
+from utils.db_manager import update_prezzo_prodotto, estrai_prezzo_da_testo, get_prodotti_raw
+            
+            
 
 # Importiamo la sidebar e le funzioni del DB
 from components.sidebar import draw_sidebar
 from utils.db_manager import get_dati_magazzino, get_nome_azienda,log_price_update
-# --- 0. CONTROLLO SICUREZZA ACCESSI ---
+# --- CONTROLLO SICUREZZA ACCESSI ---
 if 'logged_in' not in st.session_state or not st.session_state.logged_in:
     st.switch_page("app.py")
 
-# Inizializziamo le variabili di stato se non esistono
+# Variabili di stato perAI
 if 'ai_scan_active' not in st.session_state:
     st.session_state.ai_scan_active = False
 if 'market_trend_active' not in st.session_state:
@@ -40,12 +44,12 @@ else:
     total_margin = 0
     prodotti_in_perdita = 0
 
-# --- 3. LAYOUT PAGINA PRINCIPALE ---
+
 st.title(f"Dashboard: {nome_azienda}")
 st.write(f"Benvenuto **{st.session_state.nickname}**. Qui hai una panoramica intelligente della tua attività.")
 st.markdown("---")
 
-# 4. SEZIONE METRICHE (KPI)
+
 col1, col2, col3 = st.columns(3)
 
 with col1:
@@ -57,31 +61,27 @@ with col3:
 
 st.markdown("---")
 
-# 5. SEZIONE SINTESI AI (Strategic Advisor Agent)
+# --- SEZIONE SINTESI AI ---
 st.subheader("🧠 Sintesi Strategica Generata dall'IA")
 
 with st.container(border=True):
-    # 1. Creiamo il pulsante
-    if st.button("Genera Sintesi 🤖", width='stretch'):
+
+    if st.button("Analizza con IA 🤖", width='stretch'):
         
-        # 2. Se l'utente clicca, mostriamo il caricamento
         with st.spinner("L'Intelligenza Artificiale sta analizzando i dati del tuo magazzino... ⏳"):
             
-            # Chiamiamo l'agente e salviamo il risultato in memoria
             testo_generato = genera_sintesi_strategica(total_value, total_margin, prodotti_in_perdita)
             st.session_state.sintesi_ai_home = testo_generato
 
-    # 3. Controlliamo se abbiamo una sintesi in memoria da mostrare
     if 'sintesi_ai_home' in st.session_state:
         st.info(st.session_state.sintesi_ai_home)
         
     else:
-        # Messaggio di default quando non è ancora stata generata
         st.info("Clicca il pulsante qui sopra per ottenere un'analisi intelligente del tuo magazzino.")
 
 st.markdown("---")
 
-# --- 6. SEZIONE AZIONI E SUGGERIMENTI AI ---
+# --- SEZIONE AZIONI E SUGGERIMENTI AI ---
 st.subheader("⚡ Azioni Intelligenti")
 
 col_btn1, col_btn2, col_btn3 = st.columns(3)
@@ -94,19 +94,16 @@ with col_btn1:
             del st.session_state['risultato_scansione']
 
 with col_btn2:
-    if st.button("📊 Mostra Andamento Mercato", width='stretch'):
+    if st.button("📊 Visualizza Trend Prezzi", width='stretch'):
         st.session_state.market_trend_active = True
         st.session_state.ai_scan_active = False 
 
 with col_btn3:
-    if st.button("🔄 Aggiorna Tutti i Prezzi del Magazzino", width='stretch', help="Scarica i prezzi reali per tutti i prodotti"):
+    if st.button("🔄 Aggiorna Prezzi", width='stretch', help="Scarica i prezzi reali per tutti i prodotti"):
         if dati_magazzino.empty:
             st.warning("Il magazzino è vuoto!")
         else:
-            from core_ai.cerca_nuovo_prezzo_agent import crea_agente_prezzi
-            from utils.db_manager import update_prezzo_prodotto, estrai_prezzo_da_testo, get_prodotti_raw
             
-            # Recuperiamo i dati grezzi per avere gli ID
             prodotti = get_prodotti_raw(st.session_state.azienda_id)
             totale = len(prodotti)
             
@@ -140,9 +137,9 @@ with col_btn3:
 
 st.markdown("---")
 
-# --- 7. LOGICA VISUALIZZAZIONE RISULTATI ---
+# --- LOGICA VISUALIZZAZIONE RISULTATI ---
 
-# Sezione: Scansione Punti Deboli
+
 if st.session_state.ai_scan_active:
     st.markdown("### 🔍 Risultati Scansione Inefficienze")
     
@@ -153,7 +150,7 @@ if st.session_state.ai_scan_active:
 
     st.info(st.session_state.risultato_scansione)
 
-# Sezione: Andamento di Mercato (Grafico STORICO)
+#grafico
 if st.session_state.market_trend_active:
     st.markdown("### 📊 Andamento Storico del Mercato")
     
@@ -164,13 +161,8 @@ if st.session_state.market_trend_active:
         if df_trend.empty:
             st.warning("Non ci sono aggiornamenti di prezzo registrati. Aggiorna i prezzi dei tuoi prodotti per visualizzare il grafico.")
         else:
-            # Trasformiamo i dati per il grafico
             chart_data = df_trend.pivot_table(index='update_date', columns='Prodotto', values='price', aggfunc='mean')
-            
-            # Interpolazione per linee continue
             chart_data = chart_data.interpolate(method='linear')
             
-            # Mostriamo il grafico
             st.line_chart(chart_data)
-            
             st.caption("Il grafico mostra l'evoluzione dei prezzi nel tempo, registrata ad ogni aggiornamento.")

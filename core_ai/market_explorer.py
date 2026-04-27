@@ -17,6 +17,7 @@ def analizza_opportunita_prodotto(nome_prodotto: str) -> str:
             "Fornisci un consiglio tecnico chiaro: è il momento di ACQUISTARE, VENDERE o ATTENDERE?",
             "Spiega il perché del tuo consiglio in modo semplice ma professionale.",
             "Usa formattazione chiara (grassetti, elenchi) e qualche emoji per rendere la lettura piacevole."
+            "Sii breve, conciso ma molto informativo."
         ]
     )
     
@@ -35,7 +36,7 @@ def analizza_trend_categoria(categoria: str) -> str:
             "Scrivi un breve report sulle tendenze di mercato attuali per la categoria indicata.",
             "Indica quali tipi di prodotti stanno crescendo e quali stanno perdendo interesse in questa categoria.",
             "Fornisci una previsione a breve/medio termine per il settore.",
-            "Sii conciso ma molto informativo."
+            "Sii breve, conciso ma molto informativo."
         ]
     )
     
@@ -56,6 +57,7 @@ def genera_report_strategico_mercato(df_magazzino: pd.DataFrame) -> str:
             "Avverti l'utente di possibili 'bolle' di mercato o crisi imminenti legate ai prodotti che possiede.",
             "Suggerisci 'buchi di mercato' o opportunità globali che attualmente mancano nel suo magazzino.",
             "Dividi il report in: '🔥 Opportunità', '⚠️ Rischi e Bolle', e '🎯 Piano d'Azione'."
+            "Sii breve, conciso ma molto informativo."
         ]
     )
     

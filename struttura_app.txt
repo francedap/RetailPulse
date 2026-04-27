@@ -16,9 +16,9 @@ per popolare il DB:
 
 
 Credenziali di login:
-   nickname: utente1
-   Email: utente1@retailpulse.it
-   Password: password123
+   nickname: admin
+   Email: admin
+   Password: admin
 
 RetailPulse/
 │
@@ -48,9 +48,4 @@ RetailPulse/
 │   └── data_manager.py        # Funzioni per leggere/scrivere i dati del magazzino
 │
 ├── data/                      # DATI DI PROGETTO
-│   └── mock_inventory.json    # File JSON con i dati fittizi del magazzino per i test
-│
-└── assets/                    # RISORSE VISIVE
-    ├── logo.png               # Logo dell'applicazione
-    └── style.css              # File CSS se volete personalizzare colori e margini di Streamlit
-
+    └── mock_inventory.json    # File JSON con i dati fittizi del magazzino per i test

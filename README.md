@@ -160,7 +160,8 @@ L'applicazione si aprirà automaticamente nel tuo browser predefinito (tipicamen
 1. **Login:** Utilizza le credenziali predefinite se hai lanciato il popolamento del DB:
    * **Email:** `admin` (oppure l'email configurata in populate_db.py)
    * **Password:** `admin`
-2. **Dashboard (Home):** Visualizza i KPI, avvia la "Scansione Punti Deboli" per trovare gli articoli che stanno danneggiando i tuoi margini.
-3. **Magazzino:** Visualizza la tabella dei prodotti. Usa il pulsante **"Aggiorna Prezzo ⚡"** per innescare Playwright: vedrai il sistema aprire un browser in modalità headless, cercare il prodotto sul web, parsare i prezzi e aggiornare il database.
-4. **Assistente:** Apri la barra laterale (Sidebar) a sinistra e digita una domanda, ad esempio: *"Qual è il prodotto che mi sta facendo perdere più soldi?"*. L'agente leggerà il tuo DB e ti risponderà in tempo reale.
+2. **HomePage:** Visualizza i KPI, avvia la "Scansione Punti Deboli" per trovare gli articoli che stanno danneggiando i tuoi margini. Avvia "mostra andamento" generazioone del grafico per visualizzare come varia il prezzo delle tue giacenze. Avvia "aggiorna prezzi del magazzino"
+3. **Magazzino:** Visualizza la tabella dei prodotti. Usa il pulsante **Aggiorna Prezzo** Per aggiornare il prezzo del singolo prodotto selezionato.
+4. **Mercato:** Usa la text input e successivamente il bottone della sezione **Opportunità** per ricercare le informazioni di un prodotto online. Tramite il pulsante e la selezione della categoria della sezione sottostante **Trend Della Categoria** potrai analizzare l'andamento del mercato generico della categoria selezionata.
+5. **Assistente:** Apri la barra laterale (Sidebar) a sinistra e digita una domanda, ad esempio: *"Qual è il prodotto che mi sta facendo perdere più soldi?"*. L'agente leggerà il tuo DB e ti risponderà in tempo reale.
 

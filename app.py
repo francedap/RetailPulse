@@ -1,14 +1,14 @@
 import streamlit as st
 from utils.db_manager import init_db, register_user, verify_login
 
-# 1. Configurazione globale (DEVE essere la prima istruzione)
+
 st.set_page_config(page_title="RetailPulse Accesso", page_icon="🔒", layout="centered")
 
-# Inizializza le tabelle del database se non esistono
+
 init_db()
 
 # --- GESTIONE DELLO STATO DELLA SESSIONE ---
-# Queste variabili ricorderanno chi è l'utente mentre naviga tra le pagine
+
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 if 'user_id' not in st.session_state:
@@ -33,7 +33,7 @@ def show_auth_page():
         with st.form("login_form"):
             email = st.text_input("Email")
             password = st.text_input("Password", type="password")
-            submit_login = st.form_submit_button("Entra", width='stretch')
+            submit_login = st.form_submit_button("Accedi", width='stretch')
             
             if submit_login:
                 user_data = verify_login(email, password)
@@ -45,7 +45,7 @@ def show_auth_page():
                     st.session_state.nickname = user_data[2]
                     
                     st.success(f"Accesso eseguito! Bentornato, {user_data[2]}.")
-                    st.rerun() # Ricarica l'app per far scattare il reindirizzamento
+                    st.rerun()
                 else:
                     st.error("Email o password non corretti.")
 
@@ -74,5 +74,5 @@ def show_auth_page():
 if not st.session_state.logged_in:
     show_auth_page()
 else:
-    # Se l'utente è loggato, lo reindirizziamo istantaneamente alla Home Page
+
     st.switch_page("pages/HomePage.py")
