@@ -8,12 +8,12 @@ import re
 DB_PATH = "data/retailpulse.db"
 
 
+
 def init_db():
     """Inizializza il database con le tabelle relazionali necessarie."""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS utenti (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -23,7 +23,6 @@ def init_db():
         )
     ''')
 
-    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS aziende (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,7 +32,6 @@ def init_db():
         )
     ''')
 
-    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS prodotti (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -49,7 +47,6 @@ def init_db():
         )
     ''')
 
-    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS price_updates (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -61,6 +58,18 @@ def init_db():
     ''')
 
     
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS notifiche_prezzi (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            azienda_id INTEGER NOT NULL,
+            prodotto_id INTEGER NOT NULL,
+            messaggio TEXT NOT NULL,
+            letta BOOLEAN DEFAULT 0,
+            data_notifica DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (azienda_id) REFERENCES aziende (id),
+            FOREIGN KEY (prodotto_id) REFERENCES prodotti (id)
+        )
+    ''')
 
     conn.commit()
     conn.close()
@@ -255,3 +264,38 @@ def get_all_price_updates(azienda_id):
     df = pd.read_sql_query(query, conn, params=(azienda_id,))
     conn.close()
     return df
+
+def add_notifica(azienda_id, prodotto_id, messaggio):
+    """Salva un nuovo alert generato dall'agente silente."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO notifiche_prezzi (azienda_id, prodotto_id, messaggio)
+        VALUES (?, ?, ?)
+    ''', (azienda_id, prodotto_id, messaggio))
+    conn.commit()
+    conn.close()
+
+def get_notifiche_non_lette(azienda_id):
+    """Recupera le notifiche attive per l'utente e poi le segna come lette."""
+    conn = sqlite3.connect(DB_PATH)
+    
+    # Leggiamo le notifiche
+    query = """
+        SELECT id, messaggio, data_notifica 
+        FROM notifiche_prezzi 
+        WHERE azienda_id = ? AND letta = 0
+        ORDER BY data_notifica DESC
+    """
+    df_notifiche = pd.read_sql_query(query, conn, params=(azienda_id,))
+    
+    # Segniamole come lette così non compaiono all'infinito
+    if not df_notifiche.empty:
+        ids_letti = df_notifiche['id'].tolist()
+        placeholders = ','.join('?' * len(ids_letti))
+        cursor = conn.cursor()
+        cursor.execute(f"UPDATE notifiche_prezzi SET letta = 1 WHERE id IN ({placeholders})", ids_letti)
+        conn.commit()
+        
+    conn.close()
+    return df_notifiche
