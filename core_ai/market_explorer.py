@@ -1,6 +1,7 @@
 from agno.agent import Agent
 from agno.models.ollama import Ollama
 import pandas as pd
+import json
 
 def analizza_opportunita_prodotto(nome_prodotto: str) -> str:
     """
@@ -72,3 +73,61 @@ def genera_report_strategico_mercato(df_magazzino: pd.DataFrame) -> str:
     """
     risposta = agente.run(prompt)
     return risposta.content
+
+import json
+
+def interroga_orchestratore(messaggio_utente: str, df_magazzino: pd.DataFrame = None) -> dict:
+    """
+    Agente Orchestratore: Valuta l'intento dell'utente, guarda il magazzino attuale
+    e restituisce un JSON con consigli approfonditi e i bottoni.
+    """
+    
+    # Prepariamo il testo del magazzino da far leggere all'IA
+    if df_magazzino is not None and not df_magazzino.empty:
+        inventario_testo = df_magazzino.to_markdown(index=False)
+    else:
+        inventario_testo = "Il magazzino è attualmente vuoto."
+
+    agente_orchestratore = Agent(
+        model=Ollama(id="llama3.2"),
+        description="Sei il Direttore Strategico (CSO) e Analista Finanziario del Mercato Retail.",
+        instructions=[
+            "L'utente ti chiederà consigli strategici su cosa acquistare o esplorare.",
+            f"DATI DI CONTESTO OBBIGATORI - Questo è il magazzino attuale dell'utente:\n{inventario_testo}",
+            "REGOLE DI RISPOSTA:",
+            "1. NON ESSERE SBRIGATIVO. Quando ti viene chiesto un consiglio, scrivi una risposta argomentata di almeno 3-4 frasi.",
+            "2. Fai riferimento ai prodotti che l'utente ha già nel magazzino per giustificare i tuoi suggerimenti (es. 'Visto che vendi molta elettronica...').",
+            "3. Usa un tono da vero esperto finanziario e logistico (usa emoji per rendere la lettura piacevole).",
+            "Hai 3 strumenti (bottoni) a cui puoi reindirizzare l'utente:",
+            "- 'Analisi Prodotto', 'Trend Categoria', 'Report Strategico'.",
+            "REGOLA FONDAMENTALE: DEVI SEMPRE rispondere SOLO e SOLTANTO con un oggetto JSON valido. Nessun testo fuori dal JSON.",
+            "Il JSON deve avere due chiavi:",
+            "- 'messaggio': la tua risposta dettagliata e argomentata.",
+            "- 'bottoni': una lista di opzioni da cliccare (es. i 3 strumenti sopra citati)."
+        ]
+    )
+    
+    risposta = agente_orchestratore.run(messaggio_utente)
+    testo_risposta = risposta.content
+    
+    testo_risposta = testo_risposta.replace("```json", "").replace("```", "").strip()
+    
+    try:
+        # Aggiungiamo strict=False per permettere all'IA di usare gli "a capo" reali!
+        return json.loads(testo_risposta, strict=False)
+    
+    except json.JSONDecodeError:
+        # NUOVO PIANO DI EMERGENZA: Se fallisce, usiamo una Regex per estrarre 
+        # solo il testo puro e nascondere le parentesi graffe e i marker JSON.
+        import re
+        match_msg = re.search(r'"messaggio"\s*:\s*"(.*?)"\s*(?:,|\})', testo_risposta, re.IGNORECASE | re.DOTALL)
+        
+        if match_msg:
+            messaggio_pulito = match_msg.group(1).strip()
+        else:
+            messaggio_pulito = testo_risposta.replace('{"messaggio":', '').replace('"bottoni":', '').replace('}','').replace('"','').replace('[', '').replace(']', '').strip()
+            
+        return {
+            "messaggio": messaggio_pulito,
+            "bottoni": ["Analisi Prodotto", "Trend Categoria", "Report Strategico"]
+        }
