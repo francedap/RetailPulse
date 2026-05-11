@@ -35,8 +35,23 @@ def cerca_prezzi_shopping(query: str) -> str:
         
         print(f"[Scraper] 🕵️‍♂️ Navigo in incognito come: {ua_casuale[:40]}...")
 
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(user_agent=ua_casuale)
+        # Usiamo Firefox e lo teniamo invisibile (headless=True)
+        browser = p.firefox.launch(headless=False) 
+        
+        # Aggiungiamo dettagli realistici per ingannare Akamai
+        context = browser.new_context(
+            user_agent=ua_casuale,
+            viewport={'width': 1920, 'height': 1080},
+            extra_http_headers={
+                "Accept-Language": "it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+                "Upgrade-Insecure-Requests": "1",
+                "Sec-Fetch-Dest": "document",
+                "Sec-Fetch-Mode": "navigate",
+                "Sec-Fetch-Site": "none",
+                "Sec-Fetch-User": "?1"
+            }
+        )
         page = context.new_page()
 
         query_url = query.replace(" ", "+")
@@ -111,7 +126,7 @@ def cerca_prezzi_shopping(query: str) -> str:
    
     prezzi_puliti = list(set(prezzi_puliti))
     
-    prezzi_reali = [p for p in prezzi_puliti if p > 50]
+    prezzi_reali = [p for p in prezzi_puliti if p > 5]
     
     #debug 
     if not prezzi_reali:
