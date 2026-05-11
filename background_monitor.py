@@ -7,8 +7,8 @@ from utils.db_manager import add_notifica, update_prezzo_prodotto, log_price_upd
 DB_PATH = "data/retailpulse.db"
 
 def monitoraggio_continuo():
-    """L'Agente Silente che gira in background per controllare i prezzi."""
-    print("🤖 Avvio Agente Silente (Versione Pura Python, senza IA) per il monitoraggio...")
+    """L'Agente Silente (Pura Python) che gira in background collegato alle API."""
+    print("🤖 Avvio Agente Silente API per il monitoraggio...")
     
     SOGLIA_VARIAZIONE = 0.10 
     
@@ -26,17 +26,15 @@ def monitoraggio_continuo():
             print(f"🔍 Controllo: {nome} (Prezzo salvato: €{prezzo_salvato})")
             
             try:
-                # ⚡ SALTIAMO L'IA! Chiamiamo direttamente lo strumento matematico di ricerca ⚡
+                # Chiamiamo la nostra nuova funzione con API esterna
                 risultato_scraping = cerca_prezzi_shopping(nome)
                 nuovo_prezzo = None
                 
-                # Leggiamo il risultato esatto restituito dallo scraper
                 if isinstance(risultato_scraping, str) and "MEDIA:" in risultato_scraping:
                     match = re.search(r'MEDIA:\s*([0-9.,]+)', risultato_scraping)
                     if match:
                         nuovo_prezzo = float(match.group(1))
                         
-                # Se abbiamo trovato un prezzo reale e sensato
                 if nuovo_prezzo and nuovo_prezzo > 0:
                     variazione = abs(nuovo_prezzo - prezzo_salvato) / prezzo_salvato
                     
@@ -54,7 +52,7 @@ def monitoraggio_continuo():
                     else:
                         print(f"✅ Prezzo stabile per {nome} (Variazione minima).")
                 else:
-                    print(f"⚠️ Nessun prezzo valido trovato per '{nome}' (Prezzo ignorato per sicurezza).")
+                    print(f"⚠️ Nessun prezzo trovato per '{nome}'. Lo salto.")
                 
             except Exception as e:
                 print(f"❌ Errore durante il controllo di {nome}: {e}")

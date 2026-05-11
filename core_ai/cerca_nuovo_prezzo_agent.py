@@ -1,160 +1,92 @@
 import re
-import random
-import sys          
-import asyncio
+import os
+import requests
+from dotenv import load_dotenv
 from agno.agent import Agent
 from agno.models.ollama import Ollama
-from playwright.sync_api import sync_playwright
 
-if sys.platform == "win32":
-    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+# Carichiamo le variabili segrete dal file .env
+load_dotenv()
 
 def cerca_prezzi_shopping(query: str) -> str:
-    """
-    Usa SEMPRE questo strumento per cercare il prezzo di un prodotto online.
+    """Usa l'API esterna per cercare i prezzi senza farsi bloccare."""
+    print(f"\n[Scraper API] 🔍 Sto chiedendo all'API di cercare: '{query}'...")
     
-    Args:
-        query (str): Il nome del prodotto da cercare. DEVE essere una stringa di testo semplice (es. "Nike Air Force 1"). NON passare mai oggetti JSON o dizionari.
+    # Recuperiamo la chiave segreta
+    api_key = os.getenv("SCRAPER_API_KEY")
+    if not api_key:
+        print("❌ ERRORE: Manca la SCRAPER_API_KEY nel file .env!")
+        return "MEDIA: 0.0"
+
+    query_url = query.replace(" ", "+")
+    url_ebay = f"https://www.ebay.it/sch/i.html?_nkw={query_url}"
     
-    Returns:
-        str: Una lista di prezzi trovati.
-    """
-    print(f"\n[Scraper] 🔍 Sto aprendo il browser per cercare: '{query}'...")
+    # Chiamiamo ScraperAPI. L'opzione render=true gli dice di aspettare che la pagina si carichi.
+    api_url = f"http://api.scraperapi.com?api_key={api_key}&url={url_ebay}&render=true"
     
-    with sync_playwright() as p:
-        # Lista di User-Agent realistici per evitare blocchi e sembrare un utente reale
-        user_agents = [
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15",
-            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        ]
-
-        ua_casuale = random.choice(user_agents)
+    try:
+        risposta = requests.get(api_url)
+        testo_pagina = risposta.text
         
-        print(f"[Scraper] 🕵️‍♂️ Navigo in incognito come: {ua_casuale[:40]}...")
-
-        # Usiamo Firefox e lo teniamo invisibile (headless=True)
-        browser = p.firefox.launch(headless=False) 
+    except Exception as e:
+        print(f"[Scraper API] ❌ Errore di connessione: {e}")
+        return "MEDIA: 0.0"
         
-        # Aggiungiamo dettagli realistici per ingannare Akamai
-        context = browser.new_context(
-            user_agent=ua_casuale,
-            viewport={'width': 1920, 'height': 1080},
-            extra_http_headers={
-                "Accept-Language": "it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-                "Upgrade-Insecure-Requests": "1",
-                "Sec-Fetch-Dest": "document",
-                "Sec-Fetch-Mode": "navigate",
-                "Sec-Fetch-Site": "none",
-                "Sec-Fetch-User": "?1"
-            }
-        )
-        page = context.new_page()
-
-        query_url = query.replace(" ", "+")
-        
-        page.add_init_script("""
-            Object.defineProperty(navigator, 'webdriver', {
-                get: () => undefined
-            });
-        """)
-
-        url_ricerca = f"https://www.ebay.it/sch/i.html?_nkw={query_url}"
-        print(f"[Scraper] 🌐 Navigo su: {url_ricerca}")
-        
-        page.goto(url_ricerca)
-        
-        page.wait_for_timeout(5000)
-
-        #per banner cookie di ebay
-        try:
-            pulsante_accetta = page.get_by_role("button", name=re.compile("accett|accept|concord|ok", re.IGNORECASE))
-            if pulsante_accetta.count() > 0:
-                pulsante_accetta.first.click(timeout=3000)
-                print("[Scraper] 🍪 Banner dei cookie distrutto!")
-                page.wait_for_timeout(1500) 
-        except Exception:
-            pass
-      
-        testo_pagina = page.inner_text("body")
-        
-        browser.close()
-        
-#--- per estrarre i prezz dal testo ---
-
+    # --- Estrazione matematica dei prezzi ---
     valuta = r'(?:[€$£]|EUR|USD|GBP)'
     spazio = r'[\s\xa0\n]*'
     numero = r'(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)'
     
     pattern_prezzi = f'{valuta}{spazio}{numero}|{numero}{spazio}{valuta}'
-    
     match_trovati = re.findall(pattern_prezzi, testo_pagina, re.IGNORECASE)
     
     prezzi_puliti = []
-    
     for match in match_trovati:
         prezzo_str = match[0] if match[0] else match[1]
-        
         if prezzo_str:
             prezzo_str = re.sub(r'[^\d.,]', '', prezzo_str)
-
             if '.' in prezzo_str and ',' in prezzo_str:
                 prezzo_str = prezzo_str.replace('.', '').replace(',', '.')
-                
             elif ',' in prezzo_str:
-
                 parti = prezzo_str.split(',')
                 if len(parti[-1]) == 2:
                     prezzo_str = prezzo_str.replace(',', '.')
                 else:
                     prezzo_str = prezzo_str.replace(',', '') 
-                    
             elif '.' in prezzo_str:
-                
                 parti = prezzo_str.split('.')
                 if len(parti[-1]) != 2:
                     prezzo_str = prezzo_str.replace('.', '') 
-
             try:
                 prezzi_puliti.append(float(prezzo_str))
             except ValueError:
                 continue
     
-   
     prezzi_puliti = list(set(prezzi_puliti))
+    print(f"[Scraper API DEBUG] Prezzi grezzi trovati: {prezzi_puliti}")
     
+    # Manteniamo la soglia bassa a 5 euro per non scartare le magliette!
     prezzi_reali = [p for p in prezzi_puliti if p > 5]
     
-    #debug 
     if not prezzi_reali:
-        print("[Scraper] Nessun prezzo valido trovato nella pagina.")
-        return 0.0
+        print("[Scraper API] Nessun prezzo valido trovato.")
+        return "MEDIA: 0.0"
         
     media_matematica = sum(prezzi_reali) / len(prezzi_reali)
     media_arrotondata = round(media_matematica, 2)
     
-    print(f"[Scraper] Trovati i seguenti prezzi validi: {prezzi_reali}")
-    
-    return f"Prezzi trovati: {prezzi_reali}\nMEDIA: {media_arrotondata}"
+    print(f"[Scraper API] ✅ Media calcolata con successo: €{media_arrotondata}")
+    return f"MEDIA: {media_arrotondata}"
 
 
 def crea_agente_prezzi():
+    """Resta qui se volessimo usare di nuovo l'IA in futuro per i prezzi"""
     return Agent(
         model=Ollama(id="llama3.2"), 
         tools=[cerca_prezzi_shopping],
         instructions=[
             "Sei un analista esperto nel monitoraggio dei prezzi online.",
-            "Il tuo obiettivo è trovare il reale prezzo medio di mercato per i prodotti richiesti.",
-            "STRATEGIA:",
-            "- Estrai la marca e il modello preciso e le caratteristiche dalla richiesta dell'utente.",
-            "- Usa lo strumento 'cerca_prezzi_shopping'. ATTENZIONE: l'argomento 'query' DEVE essere solo testo puro.",
-            "- Scarta dalla lista i prezzi palesemente troppo bassi.",
-            "FORMATO DI RISPOSTA OBBLIGATORIO:",
-            "Non aggiungere MAI discorsi introduttivi o conclusivi. Rispondi ESATTAMENTE con questa riga:",
-            "MEDIA: [Scrivi SOLO la media in formato decimale con il punto. Se non hai prezzi, scrivi 0.0]"
+            "Usa lo strumento 'cerca_prezzi_shopping' e restituisci SOLO la MEDIA."
         ],
         debug_mode=True
     )
