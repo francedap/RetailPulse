@@ -209,7 +209,4 @@ L'apporto dell'IA è stato integrato per ottimizzare i flussi di lavoro e risolv
 * **Boilerplate Streamlit:** Scrittura dei componenti ripetitivi della UI (gestione dei form, allocazione delle colonne `st.columns` e configurazione iniziale delle pagine).
 
 
-
-```
-
 ```
