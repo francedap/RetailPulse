@@ -1,4 +1,6 @@
 
+
+
 # 📦 RetailPulse AI
 
 **RetailPulse AI** è un'applicazione web innovativa per la gestione intelligente del magazzino e l'analisi di mercato. Sfrutta modelli di Intelligenza Artificiale (LLM) eseguiti localmente e tecniche di web scraping avanzate per ottimizzare margini, vendite e strategie di acquisto aziendali.
@@ -17,6 +19,7 @@
 5. [Vincoli del Sistema](#5-vincoli-del-sistema)
 6. [Guida all'Installazione](#6-guida-allinstallazione)
 7. [Guida all'Utilizzo](#7-guida-allutilizzo)
+8. [Utilizzo di Strumenti di Intelligenza Artificiale nello Sviluppo](#8-utilizzo-di-strumenti-di-intelligenza-artificiale-nello-sviluppo)
 
 ---
 
@@ -26,63 +29,62 @@ RetailPulse AI semplifica e automatizza le decisioni strategiche di un'azienda r
 ---
 
 ## 2. Scelte Architetturali
-
 Il sistema è stato progettato puntando a modularità, facilità di deployment locale e privacy dei dati aziendali.
 
 * **Frontend & Interfaccia Utente (UI):** [Streamlit](https://streamlit.io/)
   * *Motivazione:* Permette lo sviluppo rapido di interfacce web reattive e data-driven direttamente in Python, facilitando l'integrazione immediata con librerie di data science (Pandas) e script di backend.
-* **Backend & Core Logic:** Python 3
+* **Backend & Core Logic:** Python 3.10+
 * **Database:** SQLite3 (`data/retailpulse.db`)
   * *Motivazione:* Database relazionale leggero, zero-configuration e serverless. Ideale per un prototipo dimostrativo e per l'esecuzione locale senza necessità di configurare servizi esterni (es. PostgreSQL/MySQL).
 * **Motore Intelligenza Artificiale:** [Agno Framework](https://github.com/agno-ai/agno) + [Ollama](https://ollama.com/) (Modello LLM: `llama3.2`)
-  * *Motivazione:* L'utilizzo di Ollama permette di eseguire LLM (Large Language Models) **in locale**. Questa è una scelta architetturale cruciale per garantire la *privacy totale* dei dati sensibili del magazzino aziendale e per abbattere i costi delle API cloud (es. OpenAI). Il framework Agno facilita l'orchestrazione degli agenti IA (Tools, Context, Instructions).
-* **Web Scraping & Automazione:** [Playwright](https://playwright.dev/) + Regular Expressions
-  * *Motivazione:* Utilizzato all'interno dell'agente IA per recuperare i prezzi in tempo reale (es. da eBay). Playwright, con la gestione di User-Agent dinamici, permette di aggirare blocchi anti-bot di base e banner dei cookie, estraendo l'HTML per il parsing dei prezzi in modo affidabile.
+  * *Motivazione:* L'utilizzo di Ollama permette di eseguire LLM (Large Language Models) **in locale**. Questa è una scelta architetturale cruciale per garantire la *privacy totale* dei dati sensibili del magazzino aziendale e per abbattere i costi delle API cloud (es. OpenAI). Il framework Agno facilita l'orchestrazione e l'istruzione degli agenti complessi.
+* **Web Scraping & Automazione:** [Playwright](https://playwright.dev/) / ScraperAPI + Regular Expressions
+  * *Motivazione:* Utilizzato all'interno dell'agente di tracciamento per recuperare i prezzi in tempo reale senza subire blocchi dai marketplace. L'HTML ottenuto viene poi analizzato tramite espressioni regolari matematiche per calcolare la media esatta dei prezzi di mercato.
 * **Manipolazione Dati:** [Pandas](https://pandas.pydata.org/)
-  * *Motivazione:* Essenziale per manipolare i dati estratti da SQLite, calcolare metriche finanziarie (margini, giacenze) e formattare i dati (Markdown) da fornire in pasto agli agenti IA per l'analisi.
+  * *Motivazione:* Essenziale per gestire, filtrare e aggregare i dati estratti da SQLite, calcolare metriche finanziarie (come i margini latenti) e formattare tabelle leggibili (Markdown) da fornire in input agli agenti IA per l'analisi.
 
 ---
 
 ## 3. Funzionamento del Sistema
+Il sistema si articola in 4 moduli principali strettamente interconnessi:
 
-Il sistema si articola in 3 moduli principali interagenti:
-
-1. **Dashboard (HomePage):** Aggrega i dati grezzi dal database, calcola i KPI tramite Pandas (Valore totale, Margine latente, Articoli in perdita) e interroga lo `strategic_advisor_agent` per generare un report discorsivo di alto livello sullo stato dell'azienda.
-2. **Modulo Magazzino:** Permette il CRUD (Create, Read, Update, Delete) dei prodotti. Utilizza il `cerca_nuovo_prezzo_agent` per eseguire scraping su richiesta, aggiornando dinamicamente il prezzo attuale dell'oggetto nel database.
-3. **Modulo Mercato:** Un ambiente di simulazione e ricerca dove il `market_explorer` valuta le opportunità di acquisto esterne, genera trend di categoria e compila report macroeconomici incrociando i dati del DB con la base di conoscenza del LLM.
-4. **Assistente Globale (Sidebar):** Il `support_agent` è sempre attivo. Utilizza il contesto dinamico del database aziendale (`get_prodotti_raw`) per rispondere a domande in linguaggio naturale sull'inventario in tempo reale.
+1. **Dashboard Aziendale (HomePage):** Aggrega i dati grezzi dal database e calcola i KPI aziendali in tempo reale (Valore totale magazzino, margine latente, articoli in perdita). Integra un Orchestratore Home dedicato che permette di dialogare in linguaggio naturale ed eseguire scansioni istantanee sui colli di bottiglia commerciali.
+2. **Modulo Inventario (Magazzino):** Fornisce un pannello di gestione CRUD completo per l'inserimento, la visualizzazione e la rimozione manuale degli articoli, con categorie dinamiche lette direttamente dal database.
+3. **Modulo Mercato (Architettura Multi-Agente):** Un ambiente di simulazione basato sul pattern *Orchestrator-Workers*. L'utente interagisce unicamente con un **Agente Orchestratore Principale** tramite un'interfaccia *Chat-First*. L'Orchestratore analizza l'intento dell'utente e decide autonomamente quale sotto-agente specializzato attivare (Analista Singoli Prodotti, Analista Trend di Categoria o Chief Strategy Officer per report macroeconomici), guidando l'utente attraverso bivi decisionali creati mediante una **UI generata dinamicamente** (bottoni contestuali).
+4. **Monitoraggio in Background (Background Monitor):** Per soddisfare i requisiti di scalabilità, la ricerca dei prezzi è affidata a un **Agente Silente asincrono** (`background_monitor.py`). Questo processo agisce come una "Wishlist automatizzata": controlla periodicamente i prezzi sul web e aggiorna il DB. Se rileva uno scostamento rispetto al prezzo registrato che supera una determinata **soglia di sensibilità (Threshold del 10%)**, genera un alert persistente nel DB, notificato all'utente all'accesso.
 
 ---
 
 ## 4. Struttura del Progetto
-
 ```text
 RetailPulse/
 │
 ├── app.py                     # Punto di ingresso dell'app (Login/Registrazione)
-├── populate_db.py             # Script per la generazione di dati fittizi
-├── requirements.txt           # Dipendenze di progetto
+├── populate_db.py             # Script per la generazione e il ripopolamento dei dati di test
+├── background_monitor.py      # Script indipendente per l'Agente Silente (Monitoraggio prezzi)
+├── requirements.txt           # Dipendenze e librerie di progetto
 │
-├── core_ai/                   # CORE DEL PROGETTO: Logica e Agenti IA
-│   ├── cerca_nuovo_prezzo_agent.py # Scraping con Playwright e parsing prezzi
-│   ├── inventory_analyst.py        # Analisi punti deboli e giacenze
-│   ├── market_explorer.py          # Analisi trend e macroeconomia
-│   ├── strategic_advisor_agent.py  # Sintesi rapida aziendale
-│   └── support_agent.py            # Chatbot contestualizzato al DB
+├── core_ai/                   # CORE LOGIC: Definizione ed esecuzione degli Agenti IA
+│   ├── cerca_nuovo_prezzo_agent.py # Scraper logico con parsing matematico dei prezzi
+│   ├── inventory_analyst.py        # Sotto-Agente specializzato nell'analisi delle giacenze critiche
+│   ├── market_explorer.py          # Agente Orchestratore di Mercato e relativi Sotto-Agenti di Trend
+│   ├── strategic_advisor_agent.py  # Consulente per la HomePage e gestione dei KPI
+│   └── support_agent.py            # Chatbot della Sidebar contestualizzato all'inventario
 │
-├── pages/                     # Pagine dell'interfaccia Streamlit
-│   ├── HomePage.py                 # Dashboard principale
-│   ├── Magazzino.py                # Gestione inventario
-│   └── Mercato.py                  # Analisi di mercato globale
+├── pages/                     # SCHERMATE FRONTEND (Gestite da Streamlit)
+│   ├── HomePage.py                 # Dashboard principale con l'Orchestratore Aziendale
+│   ├── Magazzino.py                # Interfaccia di gestione e azioni rapide sull'inventario
+│   └── Mercato.py                  # Schermata di chat interattiva con UI Dinamica
 │
-├── components/                # Componenti UI riutilizzabili
-│   └── sidebar.py                  # Menu di navigazione e Chatbot UI
+├── components/                # COMPONENTI UI RIUTILIZZABILI
+│   └── sidebar.py                  # Menu laterale di navigazione con Assistente di Supporto integrato
 │
-├── utils/                     # Moduli helper
-│   └── db_manager.py               # Logica di astrazione del database SQLite
+├── utils/                     # UTILITY E HELPER
+│   └── db_manager.py               # Layer di astrazione per query e interazioni con SQLite3
 │
-└── data/                      # Persistenza
-    └── retailpulse.db              # File del database relazionale
+└── data/                      # PERSISTENZA DATI
+    └── retailpulse.db              # Database relazionale dell'applicazione
+
 ```
 
 ---
@@ -91,47 +93,52 @@ RetailPulse/
 
 Per garantire il corretto funzionamento, il sistema presenta i seguenti vincoli operativi:
 
-* **Esecuzione LLM Locale (Ollama):** Il sistema *richiede* che l'applicativo [Ollama](https://ollama.com/) sia installato sulla macchina host e che il modello `llama3.2` sia stato preventivamente scaricato ed eseguito in background. Se Ollama non è in esecuzione, le funzioni di IA crasheranno o restituiranno timeout.
-* **Connettività per lo Scraping:** L'agente di ricerca prezzi necessita di una connessione internet attiva per istanziare i browser Chromium (tramite Playwright) e navigare sui marketplace.
-* **Compatibilità Browser Playwright:** Al primo avvio, Playwright richiede l'installazione dei binari del browser (gestita solitamente in automatico o tramite il comando `playwright install`).
-* **Session State:** L'autenticazione è basata sullo stato di sessione di Streamlit in RAM. Aggiornare brutalmente la pagina (F5) sul browser potrebbe causare un logout imprevisto se il server locale viene riavviato.
+* **Ollama Locale attivo:** È tassativo che l'applicativo [Ollama](https://ollama.com/) sia installato ed eseguito in background sulla macchina host con il modello `llama3.2` caricato correttamente.
+* **Script di Monitoraggio Separato:** Trattandosi di un'architettura Streamlit (soggetta a re-run sincroni della pagina), il monitoraggio continuo dei prezzi richiede che lo script `background_monitor.py` sia avviato ed eseguito in un terminale separato rispetto al server web principale.
+* **Connettività Web:** L'estrazione dei prezzi di mercato richiede una connessione Internet stabile e l'accesso alle risorse esterne (tramite ScraperAPI/Playwright) per scongiurare blocchi IP o risposte nulle.
+* **Isolamento dello Session State:** Lo stato del login e le cronologie delle singole chat (Home e Mercato) sono memorizzate temporaneamente nello `st.session_state` in RAM, azzerandosi in caso di chiusura o riavvio forzato del server Streamlit.
 
 ---
 
 ## 6. Guida all'Installazione
 
 ### Prerequisiti
+
 1. **Python 3.10 o superiore** installato.
 2. **Ollama** installato sul proprio sistema operativo ([Download qui](https://ollama.com/download)).
-3. Scaricare il modello IA aprendo un terminale e digitando:
-   ```bash
-   ollama run llama3.2
-   ```
+3. Scaricare il modello locale aprendo il terminale e digitando:
+```bash
+ollama run llama3.2
+
+```
+
+
 
 ### Setup Rapido (Script Automatizzati)
-Il repository include script per configurare automaticamente l'ambiente.
-* **Su Windows:** Fai doppio clic su `setup_windows.bat`
-* **Su Mac/Linux:** Apri il terminale, rendi lo script eseguibile con `chmod +x setup_mac_linux.command` e avvialo: `./setup_mac_linux.command`
 
-*(In alternativa, setup manuale)*:
+Il repository include script per configurare automaticamente l'ambiente virtuale e installare le librerie:
+
+* **Su Windows:** Fare doppio clic sul file `setup_windows.bat`
+* **Su Mac/Linux:** Aprire il terminale, concedere i permessi e avviare lo script:
 ```bash
-# 1. Clona il repository e posizionati nella cartella
+chmod +x setup_mac_linux.command
+./setup_mac_linux.command
+
+```
+
+
+
+*(In alternativa, per l'installazione manuale)*:
+
+```bash
 cd RetailPulse
-
-# 2. Crea l'ambiente virtuale
 python -m venv venv
-
-# 3. Attiva l'ambiente virtuale
 # Su Windows:
 venv\Scripts\activate
 # Su Mac/Linux:
 source venv/bin/activate
-
-# 4. Installa le librerie richieste
 pip install -r requirements.txt
 
-# 5. Installa i browser per Playwright (fondamentale per lo scraping)
-playwright install chromium
 ```
 
 ---
@@ -139,29 +146,70 @@ playwright install chromium
 ## 7. Guida all'Utilizzo
 
 ### 7.1. Inizializzazione del Database
-Prima del primissimo avvio, è consigliato popolare il database con dati dimostrativi per poter testare le funzionalità analitiche dell'IA:
+
+Prima del primo avvio assoluto, popolare il database relazionale SQLite con l'utente amministratore predefinito e gli articoli di prova:
+
 ```bash
 python populate_db.py
+
 ```
-Questo comando creerà l'utente di test e inserirà prodotti fittizi (es. Smartphone, Sneakers) con i relativi storici dei prezzi.
 
 ### 7.2. Avvio dell'Applicazione
-Assicurati di avere Ollama in esecuzione in background. Successivamente avvia l'app tramite gli script forniti:
-* **Su Windows:** Esegui `avvia_windows.bat`
-* **Su Mac/Linux:** Esegui `./avvia_mac_linux.command`
 
-*(Avvio manuale dal terminale con ambiente virtuale attivo)*:
+Per visualizzare ed eseguire l'intero ecosistema software, è necessario aprire due terminali separati (assicurandosi di aver attivato l'ambiente virtuale `venv` in entrambi):
+
+1. **Terminale 1 - Interfaccia Utente (Streamlit):**
 ```bash
 streamlit run app.py
+
 ```
-L'applicazione si aprirà automaticamente nel tuo browser predefinito (tipicamente all'indirizzo `http://localhost:8501`).
 
-### 7.3. Navigazione
-1. **Login:** Utilizza le credenziali predefinite se hai lanciato il popolamento del DB:
-   * **Email:** `admin` (oppure l'email configurata in populate_db.py)
-   * **Password:** `admin`
-2. **HomePage:** Visualizza i KPI, avvia la "Scansione Punti Deboli" per trovare gli articoli che stanno danneggiando i tuoi margini. Avvia "mostra andamento" generazioone del grafico per visualizzare come varia il prezzo delle tue giacenze. Avvia "aggiorna prezzi del magazzino"
-3. **Magazzino:** Visualizza la tabella dei prodotti. Usa il pulsante **Aggiorna Prezzo** Per aggiornare il prezzo del singolo prodotto selezionato.
-4. **Mercato:** Usa la text input e successivamente il bottone della sezione **Opportunità** per ricercare le informazioni di un prodotto online. Tramite il pulsante e la selezione della categoria della sezione sottostante **Trend Della Categoria** potrai analizzare l'andamento del mercato generico della categoria selezionata.
-5. **Assistente:** Apri la barra laterale (Sidebar) a sinistra e digita una domanda, ad esempio: *"Qual è il prodotto che mi sta facendo perdere più soldi?"*. L'agente leggerà il tuo DB e ti risponderà in tempo reale.
 
+*(Oppure avviare tramite `avvia_windows.bat` / `./avvia_mac_linux.command`)*.
+2. **Terminale 2 - Agente Silente (Background Monitor):**
+```bash
+python background_monitor.py
+
+```
+
+
+
+### 7.3. Credenziali di Accesso di Test
+
+Al rendering della schermata di login, inserire le credenziali precompilate dallo script di popolarità:
+
+* **Email:** `admin`
+* **Password:** `admin`
+
+### 7.4. Navigazione Flussi
+
+* **HomePage:** Consultazione dei KPI finanziari e interazione libera con l'Orchestratore Aziendale per generare grafici storici sui trend dei prezzi o individuare i punti deboli del magazzino.
+* **Magazzino:** Visualizzazione tabellare dell'inventario. È possibile inserire un nuovo prodotto tramite form controllato o forzare l'aggiornamento istantaneo del prezzo di un singolo articolo.
+* **Mercato:** Interfaccia Chat-First avanzata. Scrivendo una richiesta all'Orchestratore Principale (es. *"Vorrei analizzare il mercato dell'elettronica"*), l'agente risponderà fornendo spiegazioni dettagliate e iniettando dinamicamente bottoni decisionali nel flusso di chat per attivare i lavoratori verticali.
+
+---
+
+## 8. Utilizzo di Strumenti di Intelligenza Artificiale nello Sviluppo
+
+Nel pieno rispetto delle linee guida didattiche, di trasparenza e di integrità accademica stabilite per l'esame, si dichiara l'utilizzo di strumenti di Intelligenza Artificiale Generativa come supporto (Co-Piloting) durante la progettazione e la stesura del codice di questo applicativo.
+
+L'apporto dell'IA è stato integrato per ottimizzare i flussi di lavoro e risolvere colli di bottiglia algoritmici, lasciando inalterata la paternità intellettuale, la scelta architetturale e la supervisione logica del codice da parte degli sviluppatori.
+
+**Dettaglio degli strumenti utilizzati e ambiti di applicazione specifici:**
+
+* **Google Gemini / ChatGPT (Supporto Architetturale e Problem Solving):**
+* **Ingegnerizzazione Multi-Agente (Sezione Mercato):** Utilizzati per strutturare la logica del file `core_ai/market_explorer.py` e il routing dei messaggi in `pages/Mercato.py`. Hanno supportato la definizione dei prompt di sistema affinché l'Orchestratore producesse risposte JSON stabili, necessarie al frontend di Streamlit per interpretare l'intento e generare dinamicamente componenti grafici (bottoni contestuali per bivi decisionali) bypassando la rigidità della UI classica.
+* **Sviluppo dell'Agente Silente Asincrono:** Utilizzati in fase di brainstorming per superare il limite nativo di Streamlit legato al blocco dei thread causato dai cicli di re-run continui. Questo supporto ha guidato la scelta architetturale di separare l'agente di monitoraggio in un processo demone indipendente (`background_monitor.py`) comunicante via polling sul database SQLite.
+* **Raffinamento Documentale:** Supporto nella formattazione e organizzazione strutturale della presente documentazione tecnica.
+
+
+* **GitHub Copilot / IDE AI Assistants (Autocompletamento e Velocizzazione Codice):**
+* **Struttura Database e Modulo CRUD:** Autocompletamento sintattico nella scrittura delle istruzioni SQL standard (`CREATE TABLE`, `INSERT INTO`, `SELECT JOIN`) situate all'interno di `utils/db_manager.py`.
+* **Generazione dei Dati di Test:** Scrittura assistita del dizionario dati e delle tuple di mock inserite nel file `populate_db.py` per simulare l'andamento e le fluttuazioni storiche dei prezzi dei prodotti.
+* **Boilerplate Streamlit:** Scrittura dei componenti ripetitivi della UI (gestione dei form, allocazione delle colonne `st.columns` e configurazione iniziale delle pagine).
+
+
+
+```
+
+```
