@@ -10,6 +10,7 @@ from core_ai.strategic_advisor_agent import genera_sintesi_strategica, interroga
 from utils.db_manager import get_all_price_updates, get_prodotti_raw, update_prezzo_prodotto, log_price_update, estrai_prezzo_da_testo
 from core_ai.inventory_analyst import analizza_punti_deboli
 from core_ai.cerca_nuovo_prezzo_agent import crea_agente_prezzi
+from utils.db_manager import add_prodotto
             
             
 
@@ -205,7 +206,25 @@ if st.session_state.get("elabora_prompt_home"):
             }
             
             risposta_json = interroga_orchestratore_home(prompt_da_elaborare, dati_magazzino, kpi_data)
-            
+            azione = risposta_json.get("azione")
+            if azione == "aggiungi_prodotto":
+                prodotto = risposta_json.get("prodotto", {})
+                if prodotto.get("nome") and prodotto.get("prezzo_pagato"):
+                    add_prodotto(
+                        st.session_state.azienda_id,
+                        prodotto.get("nome"),
+                        prodotto.get("descrizione"),
+                        prodotto.get("categoria"),
+                        int(prodotto.get("quantita") or 1),
+                        float(prodotto.get("prezzo_pagato")),
+                        float(prodotto.get("prezzo_pagato"))  # prezzo_attuale iniziale = prezzo_pagato
+                        )
+                    risposta_json["messaggio"] = f"✅ Prodotto '{prodotto.get('nome')}' inserito con successo."
+                else:
+                    risposta_json["messaggio"] = "⚠️ Non ho trovato abbastanza dati per inserire il prodotto. Inserisci almeno nome e prezzo."
+                    
+
+
             st.session_state.home_chat.append({
                 "role": "assistant",
                 "content": risposta_json.get("messaggio", "Ecco alcune opzioni:"),

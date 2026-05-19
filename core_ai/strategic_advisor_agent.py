@@ -1,6 +1,7 @@
 import json
 import pandas as pd
 import re
+from core_ai.product_insert_agent import estrai_prodotto_da_testo
 from agno.agent import Agent
 from agno.models.ollama import Ollama
 
@@ -39,11 +40,26 @@ def genera_sintesi_strategica(valore_totale, margine_totale, in_perdita):
     
     return risposta.content
 
+
+parole_chiave = ["aggiungi", "inserisci", "nuovo prodotto", "aggiungi prodotto"]
+
+
+
 def interroga_orchestratore_home(messaggio_utente: str, df_magazzino: pd.DataFrame, kpi_data: dict) -> dict:
     """
     Agente Orchestratore per la HomePage: analizza la situazione, i KPI 
     e restituisce un JSON con messaggio e nuovi bottoni contestuali.
     """
+    parole_chiave = ["aggiungi", "inserisci", "nuovo prodotto", "aggiungi prodotto"]
+
+    if any(k in messaggio_utente.lower() for k in parole_chiave):
+        dati = estrai_prodotto_da_testo(messaggio_utente)
+        return {
+        "messaggio": "Ho riconosciuto una richiesta di inserimento prodotto.",
+        "bottoni": [],
+        "azione": "aggiungi_prodotto",
+        "prodotto": dati
+        }
     if df_magazzino is not None and not df_magazzino.empty:
         inventario_testo = df_magazzino.to_markdown(index=False)
     else:
@@ -62,7 +78,7 @@ def interroga_orchestratore_home(messaggio_utente: str, df_magazzino: pd.DataFra
             f"Questo è il magazzino attuale:\n{inventario_testo}",
             "REGOLE DI RISPOSTA:",
             "1. RISPONDI IN MODO COMPLETO E DETTAGLIATO. Non essere sbrigativo. Giustifica le tue idee.",
-            "2. DEVI INVENTARE 2 o 3 bottoni dinamici che suggeriscano all'utente i prossimi passi (es. 'Strategia di recupero perdite', 'Taglio prezzi', 'Esplora nuovi trend'). Non usare i vecchi bottoni di default se non ha senso.",
+            "2. DEVI INVENTARE 2 o 3 bottoni dinamici che suggeriscano all'utente i prossimi passi. Non usare i vecchi bottoni di default se non ha senso.",
             "3. Restituisci la tua risposta SOLO ed ESCLUSIVAMENTE in formato JSON con le chiavi 'messaggio' e 'bottoni' (lista di stringhe)."
         ]
     )
