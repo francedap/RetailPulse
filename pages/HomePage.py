@@ -6,6 +6,10 @@ from core_ai.inventory_analyst import analizza_punti_deboli
 from utils.db_manager import get_all_price_updates
 from core_ai.cerca_nuovo_prezzo_agent import crea_agente_prezzi
 from utils.db_manager import update_prezzo_prodotto, estrai_prezzo_da_testo, get_prodotti_raw
+from core_ai.strategic_advisor_agent import genera_sintesi_strategica, interroga_orchestratore_home
+from utils.db_manager import get_all_price_updates, get_prodotti_raw, update_prezzo_prodotto, log_price_update, estrai_prezzo_da_testo
+from core_ai.inventory_analyst import analizza_punti_deboli
+from core_ai.cerca_nuovo_prezzo_agent import crea_agente_prezzi
             
             
 
@@ -61,108 +65,150 @@ with col3:
 
 st.markdown("---")
 
-# --- SEZIONE SINTESI AI ---
-st.subheader("🧠 Sintesi Strategica Generata dall'IA")
+# --- IMPORT NECESSARI AGGIUNTIVI (Assicurati che siano in cima al file) ---
+# from core_ai.strategic_advisor_agent import genera_sintesi_strategica, interroga_orchestratore_home
+# from utils.db_manager import get_all_price_updates, get_prodotti_raw, update_prezzo_prodotto, log_price_update, estrai_prezzo_da_testo
+# from core_ai.inventory_analyst import analizza_punti_deboli
+# from core_ai.cerca_nuovo_prezzo_agent import crea_agente_prezzi
 
-with st.container(border=True):
+st.subheader("🤖 Il Tuo Orchestratore Aziendale")
 
-    if st.button("Analizza con IA 🤖", width='stretch'):
+# --- 1. INIZIALIZZAZIONE CHAT E BOTTONI BASE ---
+if "home_chat" not in st.session_state:
+    st.session_state.home_chat = [
+        {
+            "role": "assistant",
+            "content": "Benvenuto nella tua Dashboard! 👋 Sono l'Orchestratore principale. Come posso aiutarti oggi a massimizzare i profitti?",
+            "bottoni": ["Sintesi Strategica", "Scansione Punti Deboli", "Trend Prezzi", "Aggiorna Prezzi"]
+        }
+    ]
+
+# --- 2. RENDERIZZAZIONE DELLA CRONOLOGIA ---
+for msg in st.session_state.home_chat:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
         
-        with st.spinner("L'Intelligenza Artificiale sta analizzando i dati del tuo magazzino... ⏳"):
-            
-            testo_generato = genera_sintesi_strategica(total_value, total_margin, prodotti_in_perdita)
-            st.session_state.sintesi_ai_home = testo_generato
+        # Se c'è un grafico salvato in questo messaggio, mostralo!
+        if "chart_data" in msg:
+            st.line_chart(msg["chart_data"])
+            st.caption("Grafico: Evoluzione storica dei prezzi.")
 
-    if 'sintesi_ai_home' in st.session_state:
-        st.info(st.session_state.sintesi_ai_home)
+ultimo_msg = st.session_state.home_chat[-1]
+
+# --- 3. ESECUZIONE DELLE AZIONI DEI BOTTONI FISSI ---
+if st.session_state.get("azione_home_attiva"):
+    azione = st.session_state.azione_home_attiva
+    st.session_state.azione_home_attiva = "" # Resetta l'azione per non ripeterla all'infinito
+    
+    with st.chat_message("assistant"):
         
-    else:
-        st.info("Clicca il pulsante qui sopra per ottenere un'analisi intelligente del tuo magazzino.")
-
-st.markdown("---")
-
-# --- SEZIONE AZIONI E SUGGERIMENTI AI ---
-st.subheader("⚡ Azioni Intelligenti")
-
-col_btn1, col_btn2, col_btn3 = st.columns(3)
-
-with col_btn1:
-    if st.button("🔍 Scansione Punti Deboli", width='stretch'):
-        st.session_state.ai_scan_active = True
-        st.session_state.market_trend_active = False
-        if 'risultato_scansione' in st.session_state:
-            del st.session_state['risultato_scansione']
-
-with col_btn2:
-    if st.button("📊 Visualizza Trend Prezzi", width='stretch'):
-        st.session_state.market_trend_active = True
-        st.session_state.ai_scan_active = False 
-
-with col_btn3:
-    if st.button("🔄 Aggiorna Prezzi", width='stretch', help="Scarica i prezzi reali per tutti i prodotti"):
-        if dati_magazzino.empty:
-            st.warning("Il magazzino è vuoto!")
-        else:
-            
-            prodotti = get_prodotti_raw(st.session_state.azienda_id)
-            totale = len(prodotti)
-            
-            # Interfaccia di caricamento
-            status_text = st.empty()
-            progress_bar = st.progress(0)
-            
-            agente = crea_agente_prezzi()
-            
-            for i, riga in prodotti.iterrows():
-                nome_p = riga['nome']
-                id_p = riga['id']
+        if azione == "Sintesi Strategica":
+            with st.spinner("Analisi dei KPI in corso... 🧠"):
+                testo = genera_sintesi_strategica(total_value, total_margin, prodotti_in_perdita)
+                st.session_state.home_chat.append({"role": "assistant", "content": testo, "bottoni": []})
+                st.rerun()
                 
-                status_text.text(f"Aggiornamento ({i+1}/{totale}): {nome_p}...")
+        elif azione == "Scansione Punti Deboli":
+            with st.spinner("Ricerca dei colli di bottiglia... 🕵️‍♂️"):
+                testo = analizza_punti_deboli(dati_magazzino)
+                st.session_state.home_chat.append({"role": "assistant", "content": testo, "bottoni": []})
+                st.rerun()
                 
-                try:
-                    # Chiamata all'IA
-                    risposta = agente.run(f"Cerca il prezzo attuale di {nome_p} e scrivi solo il valore medio.")
-                    nuovo_prezzo = estrai_prezzo_da_testo(risposta.content)
+        elif azione == "Trend Prezzi":
+            with st.spinner("Generazione grafico andamento mercato... 📈"):
+                df_trend = get_all_price_updates(st.session_state.azienda_id)
+                if df_trend.empty:
+                    testo = "Non ci sono aggiornamenti di prezzo registrati. Esegui prima un 'Aggiorna Prezzi'."
+                    st.session_state.home_chat.append({"role": "assistant", "content": testo, "bottoni": []})
+                else:
+                    # Prepariamo i dati per il grafico
+                    chart_data = df_trend.pivot_table(index='update_date', columns='Prodotto', values='price', aggfunc='mean').interpolate(method='linear')
+                    # Salviamo il grafico NEL messaggio della chat
+                    st.session_state.home_chat.append({
+                        "role": "assistant", 
+                        "content": "Ecco l'andamento del mercato per i tuoi prodotti:",
+                        "chart_data": chart_data,
+                        "bottoni": []
+                    })
+                st.rerun()
+                
+        elif azione == "Aggiorna Prezzi":
+            if dati_magazzino.empty:
+                st.session_state.home_chat.append({"role": "assistant", "content": "Il magazzino è vuoto!", "bottoni": []})
+                st.rerun()
+            else:
+                st.markdown("Avvio ricerca prezzi sul web... 🌐")
+                prodotti = get_prodotti_raw(st.session_state.azienda_id)
+                totale = len(prodotti)
+                
+                # Barra di caricamento e testo scorrono DENTRO il fumetto chat dell'AI
+                status_text = st.empty()
+                progress_bar = st.progress(0)
+                agente = crea_agente_prezzi()
+                
+                for i, riga in prodotti.iterrows():
+                    nome_p, id_p = riga['nome'], riga['id']
+                    status_text.text(f"Aggiornamento ({i+1}/{totale}): {nome_p}...")
+                    try:
+                        risposta = agente.run(f"Cerca il prezzo attuale di {nome_p} e scrivi solo il valore medio.")
+                        nuovo_prezzo = estrai_prezzo_da_testo(risposta.content)
+                        if nuovo_prezzo:
+                            update_prezzo_prodotto(id_p, nuovo_prezzo)
+                            log_price_update(id_p, nuovo_prezzo)
+                    except Exception as e:
+                        st.error(f"Errore su {nome_p}: {e}")
                     
-                    if nuovo_prezzo:
-                        update_prezzo_prodotto(id_p, nuovo_prezzo)
-                        log_price_update(id_p, nuovo_prezzo)
-                except Exception as e:
-                    st.error(f"Errore su {nome_p}: {e}")
+                    progress_bar.progress((i + 1) / totale)
                 
-                progress_bar.progress((i + 1) / totale)
+                status_text.success("✅ Completato!")
+                
+                # Salvo l'esito nella chat
+                st.session_state.home_chat.append({"role": "assistant", "content": "Ho terminato l'aggiornamento. I tuoi prezzi ora sono allineati al mercato reale! Come procediamo?", "bottoni": ["Sintesi Strategica", "Trend Prezzi"]})
+                st.rerun()
+
+# --- 4. RENDERIZZAZIONE BOTTONI DINAMICI ---
+# Vengono mostrati solo se l'ultimo messaggio è dell'IA e non c'è già un'azione in corso
+if not st.session_state.get("azione_home_attiva") and ultimo_msg["role"] == "assistant" and ultimo_msg.get("bottoni"):
+    bottoni_disponibili = ultimo_msg["bottoni"]
+    cols = st.columns(len(bottoni_disponibili))
+    
+    for i, btn_text in enumerate(bottoni_disponibili):
+        if cols[i].button(btn_text, use_container_width=True):
+            # L'utente "scrive" il testo del bottone nella chat
+            st.session_state.home_chat.append({"role": "user", "content": btn_text})
             
-            status_text.success("✅ Tutti i prezzi sono stati aggiornati!")
+            # Se è uno dei comandi di sistema, lo attiviamo
+            if btn_text in ["Sintesi Strategica", "Scansione Punti Deboli", "Trend Prezzi", "Aggiorna Prezzi"]:
+                st.session_state.azione_home_attiva = btn_text
+            else:
+                # Altrimenti, lo passiamo all'LLM Orchestratore
+                st.session_state.elabora_prompt_home = btn_text
             st.rerun()
 
-st.markdown("---")
+# --- 5. INPUT TESTUALE LIBERO ---
+if prompt := st.chat_input("Fai una domanda all'Orchestratore sui tuoi KPI..."):
+    st.session_state.home_chat.append({"role": "user", "content": prompt})
+    st.session_state.elabora_prompt_home = prompt
+    st.rerun()
 
-# --- LOGICA VISUALIZZAZIONE RISULTATI ---
-
-
-if st.session_state.ai_scan_active:
-    st.markdown("### 🔍 Risultati Scansione Inefficienze")
+# --- 6. ELABORAZIONE DOMANDE O BOTTONI CUSTOM TRAMITE L'ORCHESTRATORE ---
+if st.session_state.get("elabora_prompt_home"):
+    prompt_da_elaborare = st.session_state.elabora_prompt_home
+    st.session_state.elabora_prompt_home = "" 
     
-    if 'risultato_scansione' not in st.session_state:
-        with st.spinner("Analisi in corso... L'IA sta cercando i colli di bottiglia 🕵️‍♂️"):
-            testo_scansione = analizza_punti_deboli(dati_magazzino)
-            st.session_state.risultato_scansione = testo_scansione
-
-    st.info(st.session_state.risultato_scansione)
-
-#grafico
-if st.session_state.market_trend_active:
-    st.markdown("### 📊 Andamento Storico del Mercato")
-    
-    with st.spinner("Generando il grafico dei trend... 📈"):
-        
-        df_trend = get_all_price_updates(st.session_state.azienda_id)
-        
-        if df_trend.empty:
-            st.warning("Non ci sono aggiornamenti di prezzo registrati. Aggiorna i prezzi dei tuoi prodotti per visualizzare il grafico.")
-        else:
-            chart_data = df_trend.pivot_table(index='update_date', columns='Prodotto', values='price', aggfunc='mean')
-            chart_data = chart_data.interpolate(method='linear')
+    with st.chat_message("assistant"):
+        with st.spinner("Sto valutando la situazione... 🧠"):
+            kpi_data = {
+                "valore_totale": total_value,
+                "margine_totale": total_margin,
+                "prodotti_in_perdita": prodotti_in_perdita
+            }
             
-            st.line_chart(chart_data)
-            st.caption("Il grafico mostra l'evoluzione dei prezzi nel tempo, registrata ad ogni aggiornamento.")
+            risposta_json = interroga_orchestratore_home(prompt_da_elaborare, dati_magazzino, kpi_data)
+            
+            st.session_state.home_chat.append({
+                "role": "assistant",
+                "content": risposta_json.get("messaggio", "Ecco alcune opzioni:"),
+                "bottoni": risposta_json.get("bottoni", [])
+            })
+            st.rerun()
