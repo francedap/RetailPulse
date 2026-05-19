@@ -82,7 +82,7 @@ def cerca_prezzi_shopping(query: str) -> str:
 def crea_agente_prezzi():
     """Resta qui se volessimo usare di nuovo l'IA in futuro per i prezzi"""
     return Agent(
-        model=Ollama(id="llama3.2"), 
+        model=Ollama(id="gpt-oss:120b-cloud", host="https://ollama.com"), 
         tools=[cerca_prezzi_shopping],
         instructions=[
             "Sei un analista esperto nel monitoraggio dei prezzi online.",

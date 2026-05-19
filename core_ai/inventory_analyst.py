@@ -13,7 +13,7 @@ def analizza_punti_deboli(df_magazzino):
 
     
     agente_inventario = Agent(
-        model=Ollama(id="llama3.2"),
+        model=Ollama(id="gpt-oss:120b-cloud", host="https://ollama.com"),
         description="Sei un analista esperto di inventario e margini di profitto.",
         instructions=[
             "Analizza attentamente le tabelle di dati che riceverai.",

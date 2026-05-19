@@ -4,7 +4,6 @@ import re
 from agno.agent import Agent
 from agno.models.ollama import Ollama
 
-
 def genera_sintesi_strategica(valore_totale, margine_totale, in_perdita):
     """
     Questa funzione prende i dati riassuntivi del magazzino e li passa
@@ -13,7 +12,7 @@ def genera_sintesi_strategica(valore_totale, margine_totale, in_perdita):
     
     
     agente_stratega = Agent(
-        model=Ollama(id="llama3.2"), 
+        model=Ollama(id="gpt-oss:120b-cloud", host="https://ollama.com"),
         description="Sei un consulente aziendale esperto di logistica e vendite.",
         instructions=[
             "Il tuo compito è scrivere un brevissimo riassunto (massimo 3 o 4 frasi) sullo stato di salute del magazzino.",
@@ -55,7 +54,8 @@ def interroga_orchestratore_home(messaggio_utente: str, df_magazzino: pd.DataFra
     perdite = kpi_data.get('prodotti_in_perdita', 0)
 
     agente_orchestratore = Agent(
-        model=Ollama(id="llama3.2"),
+        model=Ollama(id="gpt-oss:120b-cloud", host="https://ollama.com"),
+                     
         description="Sei l'Orchestratore della Dashboard Principale di RetailPulse, un brillante Chief Strategy Officer.",
         instructions=[
             f"L'utente sta guardando la dashboard aziendale. Ecco i KPI attuali:\n- Valore Magazzino: €{valore:.2f}\n- Margine Latente: €{margine:.2f}\n- Prodotti in perdita: {perdite}",

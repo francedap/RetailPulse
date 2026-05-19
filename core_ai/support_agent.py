@@ -5,7 +5,7 @@ import pandas as pd
 from utils.db_manager import get_prodotti_raw # Importiamo la funzione per leggere il DB
 
 assistente_magazzino = Agent(
-    model=Ollama(id="llama3.2"),
+    model=Ollama(id="gpt-oss:120b-cloud", host="https://ollama.com"),
     description="Sei un assistente virtuale per l'app RetailPulse, esperto di gestione magazzino e vendite.",
     instructions=[
         "Rispondi sempre in modo cortese, conciso e incoraggiante.",

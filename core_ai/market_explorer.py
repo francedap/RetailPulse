@@ -8,7 +8,7 @@ def analizza_opportunita_prodotto(nome_prodotto: str) -> str:
     1. Ricerca Opportunità: Valuta un prodotto e fornisce consigli finanziari/di mercato.
     """
     agente = Agent(
-        model=Ollama(id="llama3.2"),
+        model=Ollama(id="gpt-oss:120b-cloud", host="https://ollama.com"),
         description="Sei un esperto analista di mercato e consulente finanziario per il retail.",
         instructions=[
             "Valuta il prodotto indicato dall'utente.",
@@ -29,7 +29,7 @@ def analizza_trend_categoria(categoria: str) -> str:
     2. Trend delle Categorie: Genera un report sull'andamento di una specifica categoria.
     """
     agente = Agent(
-        model=Ollama(id="llama3.2"),
+        model=Ollama(id="gpt-oss:120b-cloud", host="https://ollama.com"),
         description="Sei un analista di tendenze specializzato nei settori retail ed e-commerce.",
         instructions=[
             "Scrivi un breve report sulle tendenze di mercato attuali per la categoria indicata.",
@@ -48,7 +48,7 @@ def genera_report_strategico_mercato(df_magazzino: pd.DataFrame) -> str:
     3. Report Strategico: Confronta il magazzino con i rischi/opportunità globali.
     """
     agente = Agent(
-        model=Ollama(id="llama3.2"),
+        model=Ollama(id="gpt-oss:120b-cloud", host="https://ollama.com"),
         description="Sei un macro-economista e Chief Strategy Officer (CSO) per un'azienda retail.",
         instructions=[
             "Riceverai i dati del magazzino attuale dell'utente.",
@@ -89,7 +89,7 @@ def interroga_orchestratore(messaggio_utente: str, df_magazzino: pd.DataFrame = 
         inventario_testo = "Il magazzino è attualmente vuoto."
 
     agente_orchestratore = Agent(
-        model=Ollama(id="llama3.2"),
+        model=Ollama(id="gpt-oss:120b-cloud", host="https://ollama.com"),
         description="Sei il Direttore Strategico (CSO) e Analista Finanziario del Mercato Retail.",
         instructions=[
             "L'utente ti chiederà consigli strategici su cosa acquistare o esplorare.",
