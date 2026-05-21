@@ -1,8 +1,8 @@
 from agno.agent import Agent
-from agno.models.ollama import Ollama 
+from agno.models.ollama import Ollama
 from dotenv import load_dotenv
 import pandas as pd
-from utils.db_manager import get_prodotti_raw # Importiamo la funzione per leggere il DB
+from utils.db_manager import get_prodotti_raw  
 
 assistente_magazzino = Agent(
     model=Ollama(id="gpt-oss:120b-cloud", host="https://ollama.com"),
@@ -21,12 +21,11 @@ assistente_magazzino = Agent(
 def chiedi_all_assistente(messaggio_utente: str, azienda_id: int) -> str:
     """Recupera i dati, crea un prompt arricchito e lo invia all'agente."""
     
-    df_prodotti = get_prodotti_raw(azienda_id)
+    df_prodotti = get_prodotti_raw(azienda_id) 
     
     if df_prodotti.empty:
         contesto_dati = "Il magazzino attualmente è VUOTO. Non ci sono prodotti."
     else:
-        
         contesto_dati = f"Ecco l'attuale inventario del magazzino:\n{df_prodotti.to_markdown(index=False)}"
         
     prompt_arricchito = f"""

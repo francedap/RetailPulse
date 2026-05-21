@@ -5,14 +5,12 @@ from dotenv import load_dotenv
 from agno.agent import Agent
 from agno.models.ollama import Ollama
 
-# Carichiamo le variabili segrete dal file .env
 load_dotenv()
 
 def cerca_prezzi_shopping(query: str) -> str:
     """Usa l'API esterna per cercare i prezzi senza farsi bloccare."""
     print(f"\n[Scraper API] 🔍 Sto chiedendo all'API di cercare: '{query}'...")
     
-    # Recuperiamo la chiave segreta
     api_key = os.getenv("SCRAPER_API_KEY")
     if not api_key:
         print("❌ ERRORE: Manca la SCRAPER_API_KEY nel file .env!")
@@ -20,8 +18,6 @@ def cerca_prezzi_shopping(query: str) -> str:
 
     query_url = query.replace(" ", "+")
     url_ebay = f"https://www.ebay.it/sch/i.html?_nkw={query_url}"
-    
-    # Chiamiamo ScraperAPI. L'opzione render=true gli dice di aspettare che la pagina si carichi.
     api_url = f"http://api.scraperapi.com?api_key={api_key}&url={url_ebay}&render=true"
     
     try:
@@ -31,8 +27,6 @@ def cerca_prezzi_shopping(query: str) -> str:
     except Exception as e:
         print(f"[Scraper API] ❌ Errore di connessione: {e}")
         return "MEDIA: 0.0"
-        
-    # --- Estrazione matematica dei prezzi ---
     valuta = r'(?:[€$£]|EUR|USD|GBP)'
     spazio = r'[\s\xa0\n]*'
     numero = r'(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)'
@@ -65,7 +59,6 @@ def cerca_prezzi_shopping(query: str) -> str:
     prezzi_puliti = list(set(prezzi_puliti))
     print(f"[Scraper API DEBUG] Prezzi grezzi trovati: {prezzi_puliti}")
     
-    # Manteniamo la soglia bassa a 5 euro per non scartare le magliette!
     prezzi_reali = [p for p in prezzi_puliti if p > 5]
     
     if not prezzi_reali:

@@ -85,32 +85,27 @@ def interroga_orchestratore_home(messaggio_utente: str, df_magazzino: pd.DataFra
     
     risposta = agente_orchestratore.run(messaggio_utente)
     testo_risposta = str(risposta.content).strip()
-    
-    # 1. Pulizia: Se l'IA aggiunge testo prima o dopo il JSON, cerchiamo di isolare solo le parentesi graffe
+
     match_json = re.search(r'\{.*\}', testo_risposta, re.DOTALL)
     if match_json:
         testo_risposta = match_json.group(0)
 
     try:
-        # Tentativo primario: Parsing pulito del JSON
         return json.loads(testo_risposta, strict=False)
         
     except json.JSONDecodeError:
-        # 2. PIANO DI EMERGENZA (Regex): L'IA ha sbagliato a scrivere il JSON.
-        # Andiamo a caccia del testo e dei bottoni ignorando la sintassi rotta.
-        messaggio_pulito = "Ho analizzato i dati, ma ho avuto un piccolo problema a formattare la risposta. Come vuoi procedere?"
-        bottoni_puliti = ["Sintesi Strategica", "Trend Prezzi"] # Fallback estremo
         
-        # Estrae il contenuto della chiave "messaggio"
+        messaggio_pulito = "Ho analizzato i dati, ma ho avuto un piccolo problema a formattare la risposta. Come vuoi procedere?"
+        bottoni_puliti = ["Sintesi Strategica", "Trend Prezzi"] 
+        
+        
         match_msg = re.search(r'"messaggio"\s*:\s*"(.*?)"(?:\s*,|\s*\})', testo_risposta, re.IGNORECASE | re.DOTALL)
         if match_msg:
-            # Rimuoviamo eventuali doppi apici interni che hanno rotto il JSON
             messaggio_pulito = match_msg.group(1).replace('"', "'").strip()
-            
-        # Estrae il contenuto dell'array "bottoni" e cerca le singole stringhe
+        
         match_bottoni = re.search(r'"bottoni"\s*:\s*\[(.*?)\]', testo_risposta, re.IGNORECASE | re.DOTALL)
         if match_bottoni:
-            # Trova tutte le parole racchiuse tra virgolette dentro l'array
+            
             items = re.findall(r'"([^"]*)"', match_bottoni.group(1))
             if items:
                 bottoni_puliti = items

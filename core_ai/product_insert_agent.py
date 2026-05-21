@@ -17,7 +17,6 @@ def estrai_prodotto_da_testo(messaggio_utente: str) -> dict:
     risposta = agente.run(messaggio_utente)
     testo = str(risposta.content).strip()
 
-    # Isola JSON
     match = re.search(r'\{.*\}', testo, re.DOTALL)
     if match:
         testo = match.group(0)

@@ -2,124 +2,149 @@ import streamlit as st
 import pandas as pd
 from components.sidebar import draw_sidebar
 from utils.db_manager import get_prodotti_raw
+from core_ai.market_explorer import interroga_orchestratore
 
-# Importiamo la nostra nuova funzione Orchestratore e i Sotto-Agenti storici
-from core_ai.market_explorer import (
-    analizza_opportunita_prodotto, 
-    analizza_trend_categoria, 
-    genera_report_strategico_mercato,
-    interroga_orchestratore
-)
-
-# --- CONTROLLO SICUREZZA ACCESSI ---
 if 'logged_in' not in st.session_state or not st.session_state.logged_in:
     st.switch_page("app.py")
 
-draw_sidebar(st.session_state.get('nome_azienda', 'La Tua Azienda'))
+if "azienda_id" not in st.session_state:
+    st.session_state.azienda_id = None
 
-st.title("📈 Analisi di Mercato (Orchestratore IA)")
-st.write("Parla in chat con il tuo Direttore Strategico. Ti guiderà nelle scelte e chiamerà gli analisti specializzati solo al momento del bisogno.")
+if "nome_azienda" not in st.session_state:
+    st.session_state.nome_azienda = "La Tua Azienda"
+
+if st.session_state.azienda_id is None:
+    st.error("❌ Errore: ID azienda non trovato. Per favore, fai login di nuovo.")
+    st.switch_page("app.py")
+
+draw_sidebar(st.session_state.nome_azienda)
+
+st.title("📈 Analisi di Mercato ")
+
+try:
+    df_magazzino = get_prodotti_raw(st.session_state.azienda_id)
+except Exception as e:
+    st.error(f"❌ Errore nel caricamento del magazzino: {e}")
+    df_magazzino = pd.DataFrame()
+
 st.markdown("---")
 
-df_magazzino = get_prodotti_raw(st.session_state.azienda_id)
 
-# --- INIZIALIZZAZIONE CRONOLOGIA CHAT ---
 if "mercato_chat" not in st.session_state:
     st.session_state.mercato_chat = [
         {
-            "role": "assistant", 
-            "content": "Benvenuto! 👋 Sono il tuo Orchestratore di Mercato. Posso aiutarti a esplorare un nuovo prodotto, analizzare i trend di una categoria o generare un report strategico globale. Come procediamo?", 
-            "bottoni": ["Analisi Prodotto", "Trend Categoria", "Report Strategico"]
+            "role": "assistant",
+            "content": "👋 Ciao! Sono il tuo consulente di mercato personale, come posso aiutarti?",
+            "azioni": [],
+            "contesto": None
         }
     ]
 
-# 1. MOSTRA TUTTI I MESSAGGI PRECEDENTI
-for msg in st.session_state.mercato_chat:
+def costruisci_contesto_conversazione():
+    """
+    Estrae l'ultimo scambio completo (domanda utente + risposta agente).
+    Questo è il contesto che passa ai bottoni suggeriti.
+    """
+    contesto = []
+    
+    for i in range(len(st.session_state.mercato_chat) - 1, -1, -1):
+        msg = st.session_state.mercato_chat[i]
+        
+        if msg["role"] == "assistant" and msg.get("content"):
+            contesto.insert(0, f"Assistant: {msg['content']}")
+            
+            if i > 0 and st.session_state.mercato_chat[i-1]["role"] == "user":
+                contesto.insert(0, f"You: {st.session_state.mercato_chat[i-1]['content']}")
+                break
+    
+    return " | ".join(contesto) if contesto else None
+
+
+for idx, msg in enumerate(st.session_state.mercato_chat):
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
-        # (Non mostriamo i bottoni vecchi per non creare confusione visiva)
-
-ultimo_msg = st.session_state.mercato_chat[-1]
-
-# 2. GESTIONE SOTTO-AGENTI (Interfacce Dinamiche)
-# Se abbiamo attivato un Sotto-Agente specifico, mostriamo l'input direttamente nella chat!
-if st.session_state.get("azione_attiva") == "Analisi Prodotto":
-    with st.chat_message("assistant"):
-        st.info("🛠️ **Sotto-Agente Attivato: Analista Singoli Prodotti**")
-        prodotto_da_cercare = st.text_input("Digita il nome del prodotto da analizzare:")
         
-        if st.button("Avvia Analisi ⚡", type="primary"):
-            with st.spinner(f"Analizzando '{prodotto_da_cercare}' sul mercato..."):
-                risultato = analizza_opportunita_prodotto(prodotto_da_cercare)
-                # Salviamo il risultato nella chat e chiudiamo l'input
-                st.session_state.mercato_chat.append({"role": "assistant", "content": risultato, "bottoni": []})
-                st.session_state.azione_attiva = ""
-                st.rerun()
-
-elif st.session_state.get("azione_attiva") == "Trend Categoria":
-    with st.chat_message("assistant"):
-        st.info("🛠️ **Sotto-Agente Attivato: Analista Trend Globali**")
-        categorie = df_magazzino['categoria'].unique().tolist() if not df_magazzino.empty else ["Elettronica", "Abbigliamento", "Sneakers"]
-        cat_scelta = st.selectbox("Seleziona la categoria da analizzare:", categorie)
-        
-        if st.button("Analizza Trend 📊", type="primary"):
-            with st.spinner(f"Raccogliendo dati per il settore '{cat_scelta}'..."):
-                risultato = analizza_trend_categoria(cat_scelta)
-                st.session_state.mercato_chat.append({"role": "assistant", "content": risultato, "bottoni": []})
-                st.session_state.azione_attiva = ""
-                st.rerun()
-
-# 3. MOSTRA BOTTONI DINAMICI (Solo per l'ultimo messaggio dell'Orchestratore)
-elif ultimo_msg["role"] == "assistant" and ultimo_msg.get("bottoni"):
-    st.write("🎯 **Scegli un'azione suggerita o scrivimi qui sotto:**")
-    
-    # Crea tante colonne quanti sono i bottoni restituiti dal JSON
-    cols = st.columns(len(ultimo_msg["bottoni"]))
-    
-    for i, btn_text in enumerate(ultimo_msg["bottoni"]):
-        if cols[i].button(btn_text, use_container_width=True):
-            # Aggiungiamo la scelta alla chat come se l'avesse scritta l'utente
-            st.session_state.mercato_chat.append({"role": "user", "content": btn_text})
+        if msg["role"] == "assistant" and msg.get("azioni"):
+            st.markdown("---")
+            st.write("💡 **Azioni suggerite:**")
             
-            # --- ROUTER SOTTO-AGENTI ---
-            if "Report Strategico" in btn_text:
-                with st.spinner("Il Sotto-Agente CSO sta incrociando i dati... ⏳"):
-                    risultato = genera_report_strategico_mercato(df_magazzino)
-                    st.session_state.mercato_chat.append({"role": "assistant", "content": risultato, "bottoni": []})
-            elif "Analisi Prodotto" in btn_text:
-                st.session_state.azione_attiva = "Analisi Prodotto"
-            elif "Trend Categoria" in btn_text:
-                st.session_state.azione_attiva = "Trend Categoria"
-            else:
-                # Se clicca un bottone generico, lo passiamo all'Orchestratore
-                st.session_state.elabora_prompt = btn_text
+            cols = st.columns(len(msg["azioni"]))
             
-            st.rerun()
+            for col_idx, azione in enumerate(msg["azioni"]):
+                with cols[col_idx]:
+                    if azione["tipo"] == "button":
+                        btn_key = f"btn_msg_{idx}_action_{col_idx}"
+                        
+                        if st.button(azione["label"], use_container_width=True, key=btn_key):
+                            user_msg_precedente = None
+                            if idx > 0 and st.session_state.mercato_chat[idx-1]["role"] == "user":
+                                user_msg_precedente = st.session_state.mercato_chat[idx-1]["content"]
+                            
+                            if user_msg_precedente:
+                                contesto_completo = (
+                                    f"Domanda precedente: '{user_msg_precedente}'\n"
+                                    f"Risposta agente: '{msg['content'][:300]}...'\n" 
+                                    f"\nNuova azione: {azione['azione']}"
+                                )
+                            else:
+                                contesto_completo = azione['azione']
+                            st.session_state.mercato_chat.append({
+                                "role": "user",
+                                "content": contesto_completo,
+                                "contesto": f"You: {user_msg_precedente}\n\nAssistant: {msg['content'][:200]}..." if user_msg_precedente else None,
+                                "azione_bottone": azione['azione']
+                            })
+                            st.rerun()
 
-# 4. GESTIONE INPUT TESTUALE LIBERO (La Chat vera e propria)
-if prompt := st.chat_input("Chiedi consiglio al tuo Orchestratore..."):
-    st.session_state.mercato_chat.append({"role": "user", "content": prompt})
-    st.session_state.elabora_prompt = prompt
+
+if prompt := st.chat_input("Scrivi la tua domanda..."):
+
+    st.session_state.mercato_chat.append({
+        "role": "user",
+        "content": prompt,
+        "contesto": None,
+        "azione_bottone": None
+    })
     st.rerun()
 
-# 5. ELABORAZIONE INTELLIGENZA DELL'ORCHESTRATORE
-if st.session_state.get("elabora_prompt"):
-    prompt_da_elaborare = st.session_state.elabora_prompt
-    st.session_state.elabora_prompt = "" # Resettiamo la variabile
+ultimo_msg = st.session_state.mercato_chat[-1] if st.session_state.mercato_chat else None
+
+if ultimo_msg and ultimo_msg["role"] == "user" and "elaborato" not in ultimo_msg:
+    ultimo_msg["elaborato"] = True
     
     with st.chat_message("assistant"):
-        with st.spinner("L'Orchestratore sta elaborando la tua richiesta... 🧠"):
-            # Chiamiamo la funzione che restituisce il JSON
-            risposta_json = interroga_orchestratore(prompt_da_elaborare, df_magazzino)
-            
-            # Estraiamo i dati in modo sicuro
-            messaggio = risposta_json.get("messaggio", "Ecco alcune opzioni per te:")
-            bottoni_dinamici = risposta_json.get("bottoni", [])
-            
-            # Salviamo tutto in cronologia
-            st.session_state.mercato_chat.append({
-                "role": "assistant", 
-                "content": messaggio, 
-                "bottoni": bottoni_dinamici
-            })
-            st.rerun()
+        with st.spinner("🧠 analisi per una risposta adeguata..."):
+            try:
+                prompt_da_elaborare = ultimo_msg["content"]
+                contesto_msg = ultimo_msg.get("contesto", None)
+                
+                if contesto_msg:
+                    print(f"📌 Contesto includente risposta precedente:\n{contesto_msg[:200]}...")
+                
+                risposta = interroga_orchestratore(
+                    messaggio_utente=prompt_da_elaborare,
+                    df_magazzino=df_magazzino,
+                    contesto_completo=contesto_msg 
+                )
+                
+                st.markdown(risposta["messaggio"])
+                
+                st.session_state.mercato_chat.append({
+                    "role": "assistant",
+                    "content": risposta["messaggio"],
+                    "azioni": risposta.get("azioni_suggerite", []),
+                    "contesto": contesto_msg
+                })
+                
+            except Exception as e:
+                st.error(f"❌ Errore durante l'elaborazione: {str(e)}")
+                print(f"Debug error: {e}")
+                
+                st.session_state.mercato_chat.append({
+                    "role": "assistant",
+                    "content": f"Scusa, ho avuto un problema: {str(e)}",
+                    "azioni": [],
+                    "contesto": ultimo_msg.get("contesto", None)
+                })
+    
+    st.rerun()

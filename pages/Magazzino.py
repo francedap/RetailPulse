@@ -8,7 +8,6 @@ from utils.db_manager import add_prodotto, get_prodotti_raw, update_prezzo_prodo
 
 import re
 
-#def per estrazione numero da risposta agente
 def estrai_numero(testo):
     testo_str = str(testo)
     numeri = re.findall(r"[-+]?\d*\.\d+|\d+", testo_str.replace(',', '.'))
@@ -19,7 +18,7 @@ def estrai_numero(testo):
     
     return prezzo_reale
 
-# --- CONTROLLO SICUREZZA ACCESSI ---
+
 if 'logged_in' not in st.session_state or not st.session_state.logged_in:
     st.switch_page("app.py")
 
@@ -32,13 +31,9 @@ st.markdown("---")
 tab_view, tab_add = st.tabs(["📋 Visualizza Inventario", " ➕ Aggiungi Prodotto"])
 
 
-# --- PREPARAZIONE DELLE CATEGORIE ---
-
 df_prodotti = get_prodotti_raw(st.session_state.azienda_id)
 
-# Categorie base di default
 categorie_disponibili = ["Sneakers", "Elettronica", "Abbigliamento", "Accessori", "Altro"]
-#per le categorie da DB
 if not df_prodotti.empty:
     categorie_dal_db = df_prodotti['categoria'].dropna().unique().tolist()
     for cat in categorie_dal_db:
@@ -46,7 +41,6 @@ if not df_prodotti.empty:
             categorie_disponibili.append(cat)
 
 
-# --- AGGIUNGI PRODOTTO ---
 with tab_add:
     st.subheader("Inserisci un nuovo articolo")
     with st.form("form_nuovo_prodotto", clear_on_submit=True):
@@ -74,14 +68,12 @@ with tab_add:
             else:
                 st.error("Assicurati di inserire il Nome e un Prezzo maggiore di 0.")
 
-# --- VISUALIZZA, AGGIORNA E RIMUOVI ---
 with tab_view:
     if df_prodotti.empty:
         st.info("Il tuo magazzino è vuoto. Spostati sulla scheda 'Aggiungi Prodotto' per iniziare.")
     else:
         st.subheader("I tuoi Prodotti")
         
-        #tabella
         df_display = df_prodotti.copy().drop(columns=['id'])
         df_display.columns = ['Nome', 'Descrizione', 'Categoria', 'Quantità', 'Prezzo Pagato (€)', 'Prezzo Attuale (€)', 'Data Inserimento']
         st.dataframe(df_display, width='stretch', hide_index=True)
@@ -114,7 +106,6 @@ with tab_view:
                     
 
                     if nuovo_prezzo is not None:
-                        # Salva nel DB
                         update_prezzo_prodotto(prodotto_id, nuovo_prezzo)
                         log_price_update(prodotto_id, nuovo_prezzo)
                         st.success(f"Prezzo aggiornato: €{nuovo_prezzo:.2f}")
