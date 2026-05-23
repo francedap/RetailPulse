@@ -3,7 +3,7 @@
 
 # 📦 RetailPulse AI
 
-**RetailPulse AI** è un'applicazione web innovativa per la gestione intelligente del magazzino e l'analisi di mercato. Sfrutta modelli di Intelligenza Artificiale (LLM) eseguiti localmente e tecniche di web scraping avanzate per ottimizzare margini, vendite e strategie di acquisto aziendali.
+**RetailPulse AI** è un'applicazione web per la gestione intelligente del magazzino e l'analisi di mercato. Sfrutta modelli di Intelligenza Artificiale e tecniche di web scraping per ottimizzare margini, vendite e strategie di acquisto aziendali.
 
 ### 👥 Autori del Progetto
 * **Francesco Dappiano** - Matricola: 20055270
@@ -16,39 +16,36 @@
 2. [Scelte Architetturali](#2-scelte-architetturali)
 3. [Funzionamento del Sistema](#3-funzionamento-del-sistema)
 4. [Struttura del Progetto](#4-struttura-del-progetto)
-5. [Vincoli del Sistema](#5-vincoli-del-sistema)
-6. [Guida all'Installazione](#6-guida-allinstallazione)
-7. [Guida all'Utilizzo](#7-guida-allutilizzo)
-8. [Utilizzo di Strumenti di Intelligenza Artificiale nello Sviluppo](#8-utilizzo-di-strumenti-di-intelligenza-artificiale-nello-sviluppo)
+5. [Guida all'Installazione](#6-guida-allinstallazione)
+6. [Guida all'Utilizzo](#7-guida-allutilizzo)
+7. [Utilizzo di Strumenti di Intelligenza Artificiale nello Sviluppo](#8-utilizzo-di-strumenti-di-intelligenza-artificiale-nello-sviluppo)
 
 ---
 
 ## 1. Panoramica del Progetto
-RetailPulse AI semplifica e automatizza le decisioni strategiche di un'azienda retail. L'applicazione supera il concetto di semplice tracciamento dell'inventario, integrando **agenti IA intelligenti** capaci di analizzare i dati aziendali, identificare inefficienze strutturali, analizzare i trend di mercato e suggerire azioni mirate (Vendere, Acquistare, Attendere) recuperando prezzi aggiornati in tempo reale dal web.
+RetailPulse AI semplifica e automatizza le decisioni strategiche di un'azienda retail. L'applicazione supera il concetto di semplice tracciamento dell'inventario, integrando **agenti AI** capaci di analizzare i dati aziendali, identificare inefficienze strutturali, analizzare i trend di mercato e suggerire azioni mirate (Vendere, Acquistare, Attendere) recuperando prezzi aggiornati in tempo reale dal web.
 
 ---
 
 ## 2. Scelte Architetturali
-Il sistema è stato progettato puntando a modularità, facilità di deployment locale e privacy dei dati aziendali.
 
 * **Frontend & Interfaccia Utente (UI):** [Streamlit](https://streamlit.io/)
   * *Motivazione:* Permette lo sviluppo rapido di interfacce web reattive e data-driven direttamente in Python, facilitando l'integrazione immediata con librerie di data science (Pandas) e script di backend.
 * **Backend & Core Logic:** Python 3.10+
 * **Database:** SQLite3 (`data/retailpulse.db`)
   * *Motivazione:* Database relazionale leggero, zero-configuration e serverless. Ideale per un prototipo dimostrativo e per l'esecuzione locale senza necessità di configurare servizi esterni (es. PostgreSQL/MySQL).
-* **Motore Intelligenza Artificiale:** [Agno Framework](https://github.com/agno-ai/agno) + [Ollama](https://ollama.com/) (Modello LLM: `llama3.2`)
-  * *Motivazione:* L'utilizzo di Ollama permette di eseguire LLM (Large Language Models) **in locale**. Questa è una scelta architetturale cruciale per garantire la *privacy totale* dei dati sensibili del magazzino aziendale e per abbattere i costi delle API cloud (es. OpenAI). Il framework Agno facilita l'orchestrazione e l'istruzione degli agenti complessi.
+* **Motore Intelligenza Artificiale:** [Agno Framework](https://github.com/agno-ai/agno) + [Ollama](https://ollama.com/) (Modello LLM: `gpt-oss:120b-cloud`)
+  * *Motivazione:* avevamo inizialmente pensato ad un modello in locale per garantire sicurezza e per non avere limiti nelle richieste possibili, ma per assicurare risposte più precise e tempi di risposta più rapidi siamo stati costretti a passare al modello in cloud  di ollama.
+  * Il framework Agno ci facilita l'orchestrazione e l'istruzione degli agenti complessi.
 * **Web Scraping & Automazione:** [Playwright](https://playwright.dev/) / ScraperAPI + Regular Expressions
   * *Motivazione:* Utilizzato all'interno dell'agente di tracciamento per recuperare i prezzi in tempo reale senza subire blocchi dai marketplace. L'HTML ottenuto viene poi analizzato tramite espressioni regolari matematiche per calcolare la media esatta dei prezzi di mercato.
-* **Manipolazione Dati:** [Pandas](https://pandas.pydata.org/)
-  * *Motivazione:* Essenziale per gestire, filtrare e aggregare i dati estratti da SQLite, calcolare metriche finanziarie (come i margini latenti) e formattare tabelle leggibili (Markdown) da fornire in input agli agenti IA per l'analisi.
-
+    
 ---
 
 ## 3. Funzionamento del Sistema
 Il sistema si articola in 4 moduli principali strettamente interconnessi:
 
-1. **Dashboard Aziendale (HomePage):** Aggrega i dati grezzi dal database e calcola i KPI aziendali in tempo reale (Valore totale magazzino, margine latente, articoli in perdita). Integra un Orchestratore Home dedicato che permette di dialogare in linguaggio naturale ed eseguire scansioni istantanee sui colli di bottiglia commerciali.
+1. **Dashboard Aziendale (HomePage):** Aggrega i dati grezzi dal database e calcola i KPI aziendali (Valore totale magazzino, margine latente, articoli in perdita). Integra un Orchestratore Home dedicato che permette di dialogare in linguaggio naturale ed eseguire scansioni istantanee sui colli di bottiglia commerciali.
 2. **Modulo Inventario (Magazzino):** Fornisce un pannello di gestione CRUD completo per l'inserimento, la visualizzazione e la rimozione manuale degli articoli, con categorie dinamiche lette direttamente dal database.
 3. **Modulo Mercato (Architettura Multi-Agente):** Un ambiente di simulazione basato sul pattern *Orchestrator-Workers*. L'utente interagisce unicamente con un **Agente Orchestratore Principale** tramite un'interfaccia *Chat-First*. L'Orchestratore analizza l'intento dell'utente e decide autonomamente quale sotto-agente specializzato attivare (Analista Singoli Prodotti, Analista Trend di Categoria o Chief Strategy Officer per report macroeconomici), guidando l'utente attraverso bivi decisionali creati mediante una **UI generata dinamicamente** (bottoni contestuali).
 4. **Monitoraggio in Background (Background Monitor):** Per soddisfare i requisiti di scalabilità, la ricerca dei prezzi è affidata a un **Agente Silente asincrono** (`background_monitor.py`). Questo processo agisce come una "Wishlist automatizzata": controlla periodicamente i prezzi sul web e aggiorna il DB. Se rileva uno scostamento rispetto al prezzo registrato che supera una determinata **soglia di sensibilità (Threshold del 10%)**, genera un alert persistente nel DB, notificato all'utente all'accesso.
@@ -89,28 +86,14 @@ RetailPulse/
 
 ---
 
-## 5. Vincoli del Sistema
-
-Per garantire il corretto funzionamento, il sistema presenta i seguenti vincoli operativi:
-
-* **Ollama Locale attivo:** È tassativo che l'applicativo [Ollama](https://ollama.com/) sia installato ed eseguito in background sulla macchina host con il modello `llama3.2` caricato correttamente.
-* **Script di Monitoraggio Separato:** Trattandosi di un'architettura Streamlit (soggetta a re-run sincroni della pagina), il monitoraggio continuo dei prezzi richiede che lo script `background_monitor.py` sia avviato ed eseguito in un terminale separato rispetto al server web principale.
-* **Connettività Web:** L'estrazione dei prezzi di mercato richiede una connessione Internet stabile e l'accesso alle risorse esterne (tramite ScraperAPI/Playwright) per scongiurare blocchi IP o risposte nulle.
-* **Isolamento dello Session State:** Lo stato del login e le cronologie delle singole chat (Home e Mercato) sono memorizzate temporaneamente nello `st.session_state` in RAM, azzerandosi in caso di chiusura o riavvio forzato del server Streamlit.
-
 ---
 
-## 6. Guida all'Installazione
+## 5. Guida all'Installazione
 
 ### Prerequisiti
 
 1. **Python 3.10 o superiore** installato.
 2. **Ollama** installato sul proprio sistema operativo ([Download qui](https://ollama.com/download)).
-3. Scaricare il modello locale aprendo il terminale e digitando:
-```bash
-ollama run llama3.2
-
-```
 
 
 
@@ -143,9 +126,9 @@ pip install -r requirements.txt
 
 ---
 
-## 7. Guida all'Utilizzo
+## 6. Guida all'Utilizzo
 
-### 7.1. Inizializzazione del Database
+### 6.1. Inizializzazione del Database
 
 Prima del primo avvio assoluto, popolare il database relazionale SQLite con l'utente amministratore predefinito e gli articoli di prova:
 
@@ -154,7 +137,7 @@ python populate_db.py
 
 ```
 
-### 7.2. Avvio dell'Applicazione
+### 6.2. Avvio dell'Applicazione
 
 Per visualizzare ed eseguire l'intero ecosistema software, è necessario aprire due terminali separati (assicurandosi di aver attivato l'ambiente virtuale `venv` in entrambi):
 
@@ -174,14 +157,14 @@ python background_monitor.py
 
 
 
-### 7.3. Credenziali di Accesso di Test
+### 6.3. Credenziali di Accesso di Test
 
 Al rendering della schermata di login, inserire le credenziali precompilate dallo script di popolarità:
 
 * **Email:** `admin`
 * **Password:** `admin`
 
-### 7.4. Navigazione Flussi
+### 6.4. Navigazione Flussi
 
 * **HomePage:** Consultazione dei KPI finanziari e interazione libera con l'Orchestratore Aziendale per generare grafici storici sui trend dei prezzi o individuare i punti deboli del magazzino.
 * **Magazzino:** Visualizzazione tabellare dell'inventario. È possibile inserire un nuovo prodotto tramite form controllato o forzare l'aggiornamento istantaneo del prezzo di un singolo articolo.
@@ -189,9 +172,9 @@ Al rendering della schermata di login, inserire le credenziali precompilate dall
 
 ---
 
-## 8. Utilizzo di Strumenti di Intelligenza Artificiale nello Sviluppo
+## 7. Utilizzo di Strumenti di Intelligenza Artificiale nello Sviluppo
 
-Nel pieno rispetto delle linee guida didattiche, di trasparenza e di integrità accademica stabilite per l'esame, si dichiara l'utilizzo di strumenti di Intelligenza Artificiale Generativa come supporto (Co-Piloting) durante la progettazione e la stesura del codice di questo applicativo.
+Nel pieno rispetto delle linee guida stabilite per l'esame, si dichiara l'utilizzo di strumenti di Intelligenza Artificiale Generativa come supporto (Co-Piloting) durante la progettazione e la stesura del codice di questo applicativo.
 
 L'apporto dell'IA è stato integrato per ottimizzare i flussi di lavoro e risolvere colli di bottiglia algoritmici, lasciando inalterata la paternità intellettuale, la scelta architetturale e la supervisione logica del codice da parte degli sviluppatori.
 
