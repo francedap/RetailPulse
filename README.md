@@ -16,7 +16,7 @@
 2. [Scelte Architetturali](#2-scelte-architetturali)
 3. [Funzionamento del Sistema](#3-funzionamento-del-sistema)
 4. [Struttura del Progetto](#4-struttura-del-progetto)
-5. [Guida all'Installazione](#5git checkout -guida-allinstallazione)
+5. [Guida all'Installazione](#5-guida-allinstallazione)
 6. [Guida all'Utilizzo](#6-guida-allutilizzo)
 7. [Utilizzo di Strumenti di Intelligenza Artificiale nello Sviluppo](#7-utilizzo-di-strumenti-di-intelligenza-artificiale-nello-sviluppo)
 
