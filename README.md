@@ -94,7 +94,7 @@ RetailPulse/
 
 1. **Python 3.10 o superiore** installato.
 2. **Ollama** installato sul proprio sistema operativo.
-3. **.env** creato un file .env nella cartella principale del progetto con le API key:
+3. **Variabili D'Ambiente** creato un file .env nella cartella principale del progetto con le API key:
 ```text
 OLLAMA_API_KEY="la_tua_api_key_di_ollama"
 SCRAPER_API_KEY="la_tua_api_key_di_scraperapi"
