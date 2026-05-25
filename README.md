@@ -3,7 +3,7 @@
 
 # 📦 RetailPulse AI
 
-**RetailPulse AI** è un'applicazione web per la gestione intelligente del magazzino e l'analisi di mercato. Sfrutta modelli di Intelligenza Artificiale e tecniche di web scraping per ottimizzare margini, vendite e strategie di acquisto aziendali.
+**RetailPulse AI** è un'applicazione web per la gestione intelligente del magazzino e l'analisi di mercato. Sfrutta modelli di Intelligenza Artificiale e web scraping per ottimizzare margini, vendite e strategie di acquisto aziendali.
 
 ### 👥 Autori del Progetto
 * **Francesco Dappiano** - Matricola: 20055270
@@ -16,27 +16,27 @@
 2. [Scelte Architetturali](#2-scelte-architetturali)
 3. [Funzionamento del Sistema](#3-funzionamento-del-sistema)
 4. [Struttura del Progetto](#4-struttura-del-progetto)
-5. [Guida all'Installazione](#6-guida-allinstallazione)
-6. [Guida all'Utilizzo](#7-guida-allutilizzo)
-7. [Utilizzo di Strumenti di Intelligenza Artificiale nello Sviluppo](#8-utilizzo-di-strumenti-di-intelligenza-artificiale-nello-sviluppo)
+5. [Guida all'Installazione](#5git checkout -guida-allinstallazione)
+6. [Guida all'Utilizzo](#6-guida-allutilizzo)
+7. [Utilizzo di Strumenti di Intelligenza Artificiale nello Sviluppo](#7-utilizzo-di-strumenti-di-intelligenza-artificiale-nello-sviluppo)
 
 ---
 
 ## 1. Panoramica del Progetto
-RetailPulse AI semplifica e automatizza le decisioni strategiche di un'azienda retail. L'applicazione supera il concetto di semplice tracciamento dell'inventario, integrando **agenti AI** capaci di analizzare i dati aziendali, identificare inefficienze strutturali, analizzare i trend di mercato e suggerire azioni mirate (Vendere, Acquistare, Attendere) recuperando prezzi aggiornati in tempo reale dal web.
+RetailPulse semplifica e automatizza le decisioni strategiche di un'azienda retail. L'applicazione usa **agenti AI** capaci di analizzare i dati aziendali, identificare inefficienze strutturali, analizzare i trend di mercato e suggerire azioni mirate (Vendere, Acquistare, Attendere) recuperando prezzi aggiornati in tempo reale dal web tramite scarping web.
 
 ---
 
 ## 2. Scelte Architetturali
 
 * **Frontend & Interfaccia Utente (UI):** [Streamlit](https://streamlit.io/)
-  * *Motivazione:* Permette lo sviluppo rapido di interfacce web reattive e data-driven direttamente in Python, facilitando l'integrazione immediata con librerie di data science (Pandas) e script di backend.
+  * *Motivazione:* Permette lo sviluppo rapido di interfacce web reattive in Python, facilitando l'integrazione immediata con librerie di data science (Pandas) e script di backend.
 * **Backend & Core Logic:** Python 3.10+
 * **Database:** SQLite3 (`data/retailpulse.db`)
-  * *Motivazione:* Database relazionale leggero, zero-configuration e serverless. Ideale per un prototipo dimostrativo e per l'esecuzione locale senza necessità di configurare servizi esterni (es. PostgreSQL/MySQL).
+  * *Motivazione:* Database relazionale leggero, zero-configuration e serverless. Ideale per un prototipo e per l'esecuzione locale senza necessità di configurare servizi esterni (es. PostgreSQL/MySQL).
 * **Motore Intelligenza Artificiale:** [Agno Framework](https://github.com/agno-ai/agno) + [Ollama](https://ollama.com/) (Modello LLM: `gpt-oss:120b-cloud`)
   * *Motivazione:* avevamo inizialmente pensato ad un modello in locale per garantire sicurezza e per non avere limiti nelle richieste possibili, ma per assicurare risposte più precise e tempi di risposta più rapidi siamo stati costretti a passare al modello in cloud  di ollama.
-  * Il framework Agno ci facilita l'orchestrazione e l'istruzione degli agenti complessi.
+  * Il framework Agno ci facilita l'organizzazione e l'istruzione degli agenti.
 * **Web Scraping & Automazione:** [Playwright](https://playwright.dev/) / ScraperAPI + Regular Expressions
   * *Motivazione:* Utilizzato all'interno dell'agente di tracciamento per recuperare i prezzi in tempo reale senza subire blocchi dai marketplace. L'HTML ottenuto viene poi analizzato tramite espressioni regolari matematiche per calcolare la media esatta dei prezzi di mercato.
     
@@ -45,10 +45,10 @@ RetailPulse AI semplifica e automatizza le decisioni strategiche di un'azienda r
 ## 3. Funzionamento del Sistema
 Il sistema si articola in 4 moduli principali strettamente interconnessi:
 
-1. **Dashboard Aziendale (HomePage):** Aggrega i dati grezzi dal database e calcola i KPI aziendali (Valore totale magazzino, margine latente, articoli in perdita). Integra un Orchestratore Home dedicato che permette di dialogare in linguaggio naturale ed eseguire scansioni istantanee sui colli di bottiglia commerciali.
-2. **Modulo Inventario (Magazzino):** Fornisce un pannello di gestione CRUD completo per l'inserimento, la visualizzazione e la rimozione manuale degli articoli, con categorie dinamiche lette direttamente dal database.
-3. **Modulo Mercato (Architettura Multi-Agente):** Un ambiente di simulazione basato sul pattern *Orchestrator-Workers*. L'utente interagisce unicamente con un **Agente Orchestratore Principale** tramite un'interfaccia *Chat-First*. L'Orchestratore analizza l'intento dell'utente e decide autonomamente quale sotto-agente specializzato attivare (Analista Singoli Prodotti, Analista Trend di Categoria o Chief Strategy Officer per report macroeconomici), guidando l'utente attraverso bivi decisionali creati mediante una **UI generata dinamicamente** (bottoni contestuali).
-4. **Monitoraggio in Background (Background Monitor):** Per soddisfare i requisiti di scalabilità, la ricerca dei prezzi è affidata a un **Agente Silente asincrono** (`background_monitor.py`). Questo processo agisce come una "Wishlist automatizzata": controlla periodicamente i prezzi sul web e aggiorna il DB. Se rileva uno scostamento rispetto al prezzo registrato che supera una determinata **soglia di sensibilità (Threshold del 10%)**, genera un alert persistente nel DB, notificato all'utente all'accesso.
+1. **HomePage:** Aggrega i dati grezzi dal database e calcola i KPI aziendali (Valore totale magazzino, margine latente, articoli in perdita). Integra un agente dedicato che permette di dialogare in linguaggio naturale ed eseguire scansioni istantanee sui colli di bottiglia commerciali.
+2. **Modulo Magazzino:** Fornisce un pannello di gestione CRUD completo per l'inserimento, la visualizzazione e la rimozione manuale degli articoli, con categorie dinamiche lette direttamente dal database.
+3. **Modulo Mercato:** L'utente interagisce unicamente con un Agente tramite un'interfaccia Chat. L'agente analizza l'intento dell'utente e decide autonomamente quale sotto-agente specializzato attivare, guidando l'utente attraverso bivi decisionali creati mediante una UI generata dinamicamente (bottoni contestuali).
+4. **Monitoraggio dei Prezzi in Background (background_monitor.py)** l file gestisce un ciclo continuo che controlla e aggiorna automaticamente i prezzi dei prodotti a catalogo: All'inizio di ogni ciclo, lo script accede al database centralizzato per recuperare l'elenco completo dei prodotti monitorati, prelevando per ciascun articolo l'identificativo univoco, l'azienda di riferimento e l'ultimo prezzo memorizzato. Successivamente, per ogni singolo prodotto in lista, il sistema avvia una ricerca automatizzata interrogando un servizio web dedicato; questo analizza i canali di shopping online per calcolare il prezzo medio di vendita corrente per quel determinato articolo.
 
 ---
 
@@ -93,8 +93,9 @@ RetailPulse/
 ### Prerequisiti
 
 1. **Python 3.10 o superiore** installato.
-2. **Ollama** installato sul proprio sistema operativo ([Download qui](https://ollama.com/download)).
-
+2. **Ollama** installato sul proprio sistema operativo.
+3. **.env** creato un file .env nella cartella principale del progetto con le API key: OLLAMA_API_KEY="la_tua_api_key_di_ollama"
+SCRAPER_API_KEY="la_tua_api_key_di_scraperapi"
 
 
 ### Setup Rapido (Script Automatizzati)
@@ -146,9 +147,9 @@ Per visualizzare ed eseguire l'intero ecosistema software, è necessario aprire 
 streamlit run app.py
 
 ```
-
-
 *(Oppure avviare tramite `avvia_windows.bat` / `./avvia_mac_linux.command`)*.
+
+
 2. **Terminale 2 - Agente Silente (Background Monitor):**
 ```bash
 python background_monitor.py
