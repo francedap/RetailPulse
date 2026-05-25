@@ -37,7 +37,7 @@ RetailPulse semplifica e automatizza le decisioni strategiche di un'azienda reta
 * **Motore Intelligenza Artificiale:** [Agno Framework](https://github.com/agno-ai/agno) + [Ollama](https://ollama.com/) (Modello LLM: `gpt-oss:120b-cloud`)
   * *Motivazione:* avevamo inizialmente pensato ad un modello in locale per garantire sicurezza e per non avere limiti nelle richieste possibili, ma per assicurare risposte più precise e tempi di risposta più rapidi siamo stati costretti a passare al modello in cloud  di ollama.
   * Il framework Agno ci facilita l'organizzazione e l'istruzione degli agenti.
-* **Web Scraping & Automazione:** [Playwright](https://playwright.dev/) / ScraperAPI + Regular Expressions
+* **Web Scraping & Automazione:** [Playwright](https://playwright.dev/) / [ScraperAPI](https://www.scraperapi.com) + Regular Expressions
   * *Motivazione:* Utilizzato all'interno dell'agente di tracciamento per recuperare i prezzi in tempo reale senza subire blocchi dai marketplace. L'HTML ottenuto viene poi analizzato tramite espressioni regolari matematiche per calcolare la media esatta dei prezzi di mercato.
     
 ---
